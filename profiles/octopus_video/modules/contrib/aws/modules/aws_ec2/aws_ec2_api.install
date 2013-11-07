@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ * aws_ec2_api Installation file
+ *
+ * Copyright (c) 2010-2011 DOCOMO Innovations, Inc.
+ *
+ */
+
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
+function aws_ec2_api_uninstall() {
+  variable_del('aws_ec2_api_host');
+}
+

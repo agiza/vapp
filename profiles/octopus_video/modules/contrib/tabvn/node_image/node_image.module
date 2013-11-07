@@ -1,0 +1,164 @@
+<?php
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function node_image_field_formatter_info() {
+  return array(
+      'node_image' => array(
+          'label' => t('Tabvn node image formatter'),
+          'field types' => array('image'),
+          'settings' => array(
+              'node_image_node_style' => '',
+              'node_image_image_style' => '',
+          ),
+      ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function node_image_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $image_styles = image_style_options(FALSE);
+  $image_styles_hide = $image_styles;
+  $image_styles_hide['hide'] = t('Hide (do not display image)');
+  $element['node_image_node_style'] = array(
+      '#title' => t('Content image style'),
+      '#type' => 'select',
+      '#default_value' => $settings['node_image_node_style'],
+      '#empty_option' => t('None (original image)'),
+      '#options' => $image_styles_hide,
+      '#description' => t('Image style to use in the content.'),
+  );
+  $element['node_image_image_style'] = array(
+      '#title' => t('Preview image style'),
+      '#type' => 'select',
+      '#default_value' => $settings['node_image_image_style'],
+      '#empty_option' => t('None (original image)'),
+      '#options' => $image_styles,
+      '#description' => t('Image style to use in the lightbox.'),
+  );
+
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function node_image_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  $image_styles = image_style_options(FALSE);
+  // Unset possible 'No defined styles' option.
+  unset($image_styles['']);
+  // Styles could be lost because of enabled/disabled modules that defines
+  // their styles in code.
+  if (isset($image_styles[$settings['node_image_node_style']])) {
+    $summary[] = t('Content image style: @style', array('@style' => $image_styles[$settings['node_image_node_style']]));
+  } elseif ($settings['node_image_node_style'] == 'hide') {
+    $summary[] = t('Content image style: Hide');
+  } else {
+    $summary[] = t('Content image style: Original image');
+  }
+
+  if (isset($image_styles[$settings['node_image_image_style']])) {
+    $summary[] = t('Preview image style: @style', array('@style' => $image_styles[$settings['node_image_image_style']]));
+  } else {
+    $summary[] = t('Preview image style: Original image');
+  }
+
+
+
+  return implode('<br />', $summary);
+}
+
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function node_image_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  foreach ($items as $delta => $item) {
+   
+    $element[$delta] = array(
+      '#theme' => 'node_image_image_formatter',
+      '#item' => $item,
+      '#entity_type' => $entity_type,
+      '#entity' => $entity,
+      '#node' => $entity, // Left for legacy support.
+      '#field' => $field,
+      '#display_settings' => $display['settings'],
+    );
+   
+  }
+
+
+  return $element;
+  
+}
+
+/**
+ * Implements hook_insert_styles().
+ */
+function node_image_insert_styles() {
+  $insert_styles = array();
+  foreach (image_styles() as $key => $style) {
+    $insert_styles['node_image__' . $key] = array('label' => t('NodeImage @style', array('@style' => $style['name'])));
+  }
+
+  return $insert_styles;
+}
+/**
+ * Implements hook_insert_content().
+ */
+function node_image_insert_content($item, $style, $widget) {
+  list($item['module_name'], $item['style_name']) = explode('__', $style['name'], 2);
+  return theme('node_image_insert_image', array('item' => $item, 'widget' => $widget));
+}
+
+/**
+ * Implements hook_theme().
+ */
+function node_image_theme() {
+  return array(
+    'node_image_imagefield' => array(
+      'variables' => array(
+        'image' => array(),
+        'path' => NULL,
+        'title' => NULL,
+        'gid' => NULL,
+      ),
+      'file' => 'node_image.theme.inc',
+    ),
+
+    'node_image_insert_image' => array(
+      'variables' => array(
+        'item' => NULL,
+        'widget' => NULL,
+      ),
+      'template' => 'colorbox-insert-image',
+      'file' => 'node_image.theme.inc',
+    ),
+
+    'node_image_image_formatter' => array(
+      'variables' => array(
+        'item' => NULL,
+        'entity_type' => NULL,
+        'entity' => NULL,
+        'node' => NULL,  // Left for legacy support.
+        'field' => array(),
+        'display_settings' => array(),
+      ),
+      'file' => 'node_image.theme.inc',
+    ),
+  );
+}

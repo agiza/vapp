@@ -1,0 +1,2514 @@
+<?php
+
+/**
+ * @file
+ * Amazon EC2 Library module
+ *
+ * Copyright (c) 2010-2011 DOCOMO Innovations, Inc.
+ *
+ */
+
+/**
+ * Updated by yas   2011/07/14
+ * Updated by jiten 2011/06/20
+ */
+
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_constants'         );
+module_load_include('inc', 'aws_ec2_lib'                                  );
+
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_ebs_volumes_ui'    );
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_elastic_ips_ui'    );
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_images_ui'         );
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_instances_ui'      );
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_security_groups_ui');
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_snapshots_ui'      );
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_ssh_keys_ui'       );
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_db'                );
+
+
+/**
+ * Implementation of hook_theme
+ */
+function aws_ec2_lib_theme() {
+
+  return array(
+    'aws_ec2_lib_display_instances_list' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_instances_ui.inc',
+    ),
+    'aws_ec2_lib_display_instance_info' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_instances_ui.inc',
+    ),
+    'aws_ec2_lib_attach_instance_volume' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_instances_ui.inc',
+    ),
+    'aws_ec2_lib_display_instance_volume_info' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_instances_ui.inc',
+    ),
+    'aws_ec2_lib_display_instance_monitor_info' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_instances_ui.inc',
+    ),
+    'aws_ec2_lib_display_ebs_volmues_list' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_ebs_volumes_ui.inc',
+    ),
+    'aws_ec2_lib_create_ebs_volume' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_ebs_volumes_ui.inc',
+    ),
+    'aws_ec2_lib_display_ebs_volume' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_ebs_volumes_ui.inc',
+    ),
+    'aws_ec2_lib_create_ebs_volume_snapshot' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_ebs_volumes_ui.inc',
+    ),
+    'aws_ec2_lib_display_elastic_ip' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_elastic_ips_ui.inc',
+    ),
+    'aws_ec2_lib_display_elastic_ip_list' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_elastic_ips_ui.inc',
+    ),
+    'aws_ec2_lib_display_images_list' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_images_ui.inc',
+    ),
+    'aws_ec2_lib_display_bundle_image_form' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_images_ui.inc',
+    ),
+    'aws_ec2_lib_bundle_instance' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_instances_ui.inc',
+    ),
+    'aws_ec2_lib_display_security_group' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_security_groups_ui.inc',
+    ),
+    'aws_ec2_lib_create_security_group' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_security_groups_ui.inc',
+    ),
+    'aws_ec2_lib_display_security_group_list' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_security_groups_ui.inc',
+    ),
+    'aws_ec2_lib_display_snapshot_list' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_snapshots_ui.inc',
+    ),
+    'aws_ec2_lib_display_ssh_key' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_ssh_keys_ui.inc',
+    ),
+    'aws_ec2_lib_create_ssh_key' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_ssh_keys_ui.inc',
+    ),
+    'aws_ec2_lib_display_ssh_keys_list' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_ssh_keys_ui.inc',
+    ),
+    'aws_ec2_lib_display_snapshot_info' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_snapshots_ui.inc',
+    ),
+    'aws_ec2_lib_display_instance_console_output' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_instances_ui.inc',
+    ),
+    'aws_ec2_lib_display_instance_script_execution_output' => array(
+      'render element' => 'form',
+      'file' => 'aws_ec2_lib_instances_ui.inc',
+    ),
+    'aws_ec2_lib_server_templates_new' => array(
+      'render element' => 'form',
+      //'file'      => 'aws_ec2_lib.module', 
+      'function' => 'theme_cloud_server_templates_new',
+    ),
+    'aws_ec2_lib_server_templates_view' => array(
+      'render element' => 'form',
+      //'file'      => 'aws_ec2_lib.module', 
+      'function' => 'theme_cloud_server_templates_view',
+    ),
+  );
+}
+
+
+/**
+ * Unset the variables specific to a sub-cloud
+ *
+ * @param $cloud_context
+ *              sub-cloud
+ */
+function aws_ec2_lib_var_del($cloud_context) {
+
+  // Remove the EC2 variables specific to a Cloud
+  variable_del($cloud_context . '_' . 'api_version'         );
+  variable_del($cloud_context . '_' . 'host_uri'            );
+  variable_del($cloud_context . '_' . 'aws_access_key'      );
+  variable_del($cloud_context . '_' . 'aws_secret_key'      );
+  variable_del($cloud_context . '_' . 'user_id'             );
+  variable_del($cloud_context . '_' . 'certificate'         );
+  variable_del($cloud_context . '_' . 'image_upload_url'    );
+  variable_del($cloud_context . '_' . 'image_register_url'  );
+}
+
+/**
+ *
+ * Return the admin settings form for a sub-cloud
+ *
+ * @param $cloud_context
+ *          sub-cloud
+ * @return
+ */
+function aws_ec2_lib_get_admin_settings($cloud_context) {
+
+  $form = array();
+
+  $form['api_version'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API Version'),
+    '#description' => t('The API Version of REST API (yyyy-mm-dd)'),
+    '#size' => 15,
+    '#default_value' => AWS_EC2_LIB_API_VERSION,
+    '#required' => TRUE,
+  );
+
+  $form['host_uri'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API URI'),
+    '#default_value' => AWS_EC2_LIB_HOST_URI,
+    '#description' => t("'http://' is NOT required: e.g. ec2.amazonaws.com / ec2.us-west-1.amazonaws.com / ec2.eu-west-1.amazonaws.com / ec2.ap-southeast-1.amazonaws.com / ec2.ap-northeast-1.amazonaws.com"),
+    '#size' => 50,
+    '#maxlength' => 255,
+    '#required' => TRUE,
+  );
+
+  $form['aws_access_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Access Key'),
+    '#description' => t('e.g. 12ABCDEFGHIJKVWXYZ89'),
+    '#size' => 30,
+    '#required' => TRUE,
+  );
+
+  $form['aws_secret_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('AWS Secret Key'),
+    '#size' => 55,
+    '#maxlength' => 50,
+    '#description' => t('e.g. 123ABC/defGHIjkl34+LMNopq567RSTuvwxYz89Z'),
+    '#required' => TRUE,
+  );
+
+  $form['user_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User ID'),
+    '#description' => t('e.g. 123456789012'),
+    '#size' => 15,
+    '#required' => TRUE,
+  );
+
+  $form['image_upload_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Image Upload URL'),
+    '#default_value' => AWS_EC2_LIB_IMAGE_UPLOAD_URL,
+    '#description' => t('e.g. https://s3.amazonaws.com'),
+    '#size' => 50,
+    '#maxlength' => 255,
+    '#required' => TRUE,
+  );
+
+  $form['image_register_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Image Register URL'),
+    '#default_value' => AWS_EC2_LIB_IMAGE_REGISTER_URL,
+    '#description' => t("https://' is REQUIRED: e.g. https://ec2.amazonaws.com / https://ec2.us-west-1.amazonaws.com / https://ec2.eu-west-1.amazonaws.com / https://ec2.ap-southeast-1.amazonaws.com / https://ec2.ap-northeast-1.amazonaws.com"),
+    '#size' => 50,
+    '#maxlength' => 255,
+    '#required' => TRUE,
+  );
+
+  $form['certificate'] = array(
+    '#type' => 'textarea',
+    '#title' => t('X.509 Certificate'),
+    '#description' => t('X.509 Certificate to use'),
+    '#rows' => 17,
+    '#size' => 66,
+    '#required' => TRUE,
+  );
+
+  return cloud_settings_form($form, $cloud_context );
+}
+
+/**
+ *
+ * clear the temporary logs form for a sub-cloud
+ *
+ * @return
+ */
+function aws_ec2_lib_clear_temporary_logs() {
+
+  $cloud_list = cloud_get_all_clouds();
+
+  $all_instances_list = array();
+  $sql_col = '';
+  $filter  = '';
+  $filter_params = array(
+    'column' => $sql_col,
+    'filter_value' => $filter,
+  );
+  foreach ($cloud_list as $cloud_context) {
+
+    $instances_list     = cloud_get_instances($cloud_context, $filter_params  );
+    $all_instances_list = array_merge( $all_instances_list  , $instances_list );
+  }
+  $running_instances = array();
+  foreach ( $all_instances_list as $instanceId => $instanceObj) {
+    if ($instanceObj['state'] == 'running' ) {
+      $running_instances[] = $instanceId;
+    }
+  }
+  //print_r($running_instances);die;
+  $output_dir = file_create_path(AWS_EC2_LIB_TEMP_DIR);
+  aws_ec2_delete_dir($output_dir, $running_instances);
+
+  drupal_set_message(t('Temporary Logs have been cleared.'));
+  drupal_goto('admin');
+}
+
+function aws_ec2_delete_dir($dir, $running_instances = array(), $flag = '') {
+  // open the directory
+  $dhandle = opendir($dir);
+
+  if ($dhandle) {
+    // loop through it
+    while (false !== ($fname = readdir($dhandle))) {
+      // if the element is a directory, and 
+      // does not start with a '.' or '..'
+      // we call deleteDir function recursively 
+      // passing this element as a parameter
+      if (is_dir( "{$dir}/{$fname}")  ) {
+        if ( !in_array($fname, $running_instances)) {
+          if (($fname != '.') && ($fname != '..')) {
+            //echo "<u>Deleting Files in the Directory</u>: {$dir}/{$fname} <br />";die;
+            aws_ec2_delete_dir("$dir/$fname", $running_instances, 'true');
+            //rmdir("$dir/$fname");
+          }
+        }
+        // the element is a file, so we delete it
+      }
+      else {
+        //if ( !in_array($fname, $running_instances) ) {
+        //chmod("{$dir}/{$fname}", 0777);
+        //echo "Deleting File: {$dir}/{$fname} <br />";
+        unlink("{$dir}/{$fname}");
+        //}
+      }
+    }
+    closedir($dhandle);
+  }
+  // now directory is empty, so we can use
+  // the rmdir() function to delete it
+  //echo "<u>Deleting Directory</u>: {$dir} <br />";
+  if ( $flag == 'true' ) {
+    //echo "<u>Deleting Directory</u>: {$dir} <br />";
+    rmdir($dir);
+  }
+}
+
+
+/**
+ *  Get the name of database table using the sub-cloud
+ *  This is useful since the schema is shared between sub-cloud's but the
+ *  actual tables are different
+ *
+ *  Removed $cloud_context.  Everything is coming from one set of
+ *  tables now
+ *
+ * @param $table_name
+ *              The type of table/information which is to be queried
+ * @return
+ *              Database table name
+ */
+function aws_ec2_lib_get_table_info($table_name) {
+
+  //return AWS_EC2_LIB_CLOUD_PREFIX . $cloud_context . '_' . $table_name  ;
+  return AWS_EC2_LIB_CLOUD_PREFIX . AWS_EC2_LIB_DB_CONTEXT . '_' . $table_name;
+}
+
+
+/**
+ * This function returns the menu for the EC2 lib dependent cloud.
+ * This assumes that the corresponding cloud supports the basic operations of EC2 API.
+ */
+function aws_ec2_lib_get_menu($cloud_context) {
+
+  $cloud_menu_path = cloud_get_menu_path( $cloud_context );
+
+  $cloud_display_name = '';
+  $enabled_cloud_list = cloud_get_clouds();
+
+  for ($row_counter = 0; $row_counter < count($enabled_cloud_list); $row_counter++) {
+
+    $cloud_name = $enabled_cloud_list[$row_counter]['cloud_name'];
+    if ( $cloud_name == $cloud_context ) {
+
+      $cloud_display_name = $enabled_cloud_list[$row_counter]['cloud_display_name'];
+      $cloud_found = TRUE;
+
+      break;
+    }
+  }
+
+  $cloud_display_name = $cloud_display_name
+                      ? $cloud_display_name
+                      : $cloud_context;
+
+  $items = array();
+
+  //clear logs
+  $items['admin/config/clear_logs'] = array(
+    'title' => 'Clear Temporary Logs',
+    'description' => 'Clear Temporary Logs',
+    'page callback' => 'aws_ec2_lib_clear_temporary_logs',
+    'page arguments' => array(''),
+    'access arguments' => array('administer cloud'),
+    'file' => '',
+  );
+
+  $items[$cloud_menu_path] = array(
+    'title' => $cloud_display_name,
+    'description' => $cloud_display_name,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_instances_list', $cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'weight' => -5,
+  );
+
+  $items[$cloud_menu_path . '/get_instances_data'] = array(
+    'title' => $cloud_display_name . ' API (get_instances_data)',
+    'page callback' => 'aws_ec2_lib_fetch_instances_data',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/callback_get_instances_list'] = array(
+    'page callback' => '_aws_ec2_lib_callback_get_instances_list',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/get_volumes_data'] = array(
+    'title' => $cloud_display_name . ' API (get volume_data)',
+    'page callback' => 'aws_ec2_lib_fetch_volumes_data',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+
+  $items[$cloud_menu_path . '/callback_get_volumes_list'] = array(
+    'page callback' => '_aws_ec2_lib_callback_get_volumes_list',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'type' => MENU_CALLBACK,
+  );
+
+
+  $items[$cloud_menu_path . '/get_elastic_ips_data'] = array(
+    'title' => $cloud_display_name . ' API (get elastic_ips_data)',
+    'page callback' => 'aws_ec2_lib_fetch_elastic_ips_data',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+
+  $items[$cloud_menu_path . '/get_security_group_data'] = array(
+    'title' => $cloud_display_name . ' API (get_security_data )',
+    'page callback' => 'aws_ec2_lib_fetch_security_group_data',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+
+  $items[$cloud_menu_path . '/get_snapshots_data'] = array(
+    'title' => $cloud_display_name . ' API (get_snapshot_data)',
+    'page callback' => 'aws_ec2_lib_fetch_snapshots_data',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+
+  $items[$cloud_menu_path . '/callback_get_snapshots_list'] = array(
+    'page callback' => '_aws_ec2_lib_callback_get_snapshots_list',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'type' => MENU_CALLBACK,
+  );
+
+
+  $items[$cloud_menu_path . '/get_ssh_keys_data'] = array(
+    'title' => $cloud_display_name . ' get data',
+    'page callback' => 'aws_ec2_lib_fetch_ssh_keys_data',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/getimagedata'] = array(
+    'title' => $cloud_display_name . ' get image data',
+    'page callback' => 'aws_ec2_lib_fetch_image_data',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instance_templates'] = array(
+    'title' => 'Launch',
+    'description' => 'Launch a New Instance',
+    'page callback' => '_cloud_instance_templates',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array('list template'),
+    'file' => '',
+    'weight' => -1,
+  );
+
+  $items[$cloud_menu_path . '/instance_templates/template_new'] = array(
+    'title' => 'Launch',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cloud_server_templates_instance_template_create', $cloud_context),
+    'access arguments' => array($cloud_context . ' create template'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instance_templates/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => '_cloud_server_templates_instance_template_delete',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instance_templates/launch'] = array(
+    'title' => 'Launch',
+    'page callback' => 'instance_template_launch',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' launch instance'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instance_templates/copy'] = array(
+    'title' => 'Copy',
+    'page callback' => '_cloud_server_templates_instance_template_copy',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array('copy template'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances'] = array(
+    'title' => 'Instances',
+    'description' => 'Instances',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_instances_list', $cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'weight' => 1,
+  );
+
+
+  $items[$cloud_menu_path . '/instances/describe'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_instances_list', $cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+
+  $items[$cloud_menu_path . '/instances/describe/%/info'] = array(
+    'title' => 'Info',
+    'description' => 'Info',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_instance_info', $cloud_context, 4),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'weight' => 1,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items[$cloud_menu_path . '/instances/describe/%/volume'] = array(
+    'title' => 'Volumes',
+    'description' => 'Volumes',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_instance_volume_info', $cloud_context, 4),
+    'access arguments' => array($cloud_context . ' list volume'),
+    'file' => '',
+    'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items[$cloud_menu_path . '/instances/describe/%/volume/attach_volume'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_attach_instance_volume', $cloud_context, 4),
+    'access arguments' => array($cloud_context . ' attach volume'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances/describe/%/volume/detach_volume'] = array(
+    'title' => 'Detach',
+    'page callback' => 'aws_ec2_lib_detach_instance_volume',
+    'page arguments' => array($cloud_context, 4),
+    'access arguments' => array($cloud_context . ' attach volume'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances/terminate'] = array(
+    'title' => 'Terminate',
+    'page callback' => 'aws_ec2_lib_terminate_instance',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances/reboot'] = array(
+    'title' => 'Reboot',
+    'page callback' => 'aws_ec2_lib_reboot_instance',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances/bundle_instance'] = array(
+    'title' => 'Bundle Instance',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_bundle_instance', $cloud_context),
+    'access arguments' => array($cloud_context . ' bundle instance'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances/monitor'] = array(
+    'title' => 'Monitor',
+    'page callback' => 'aws_ec2_lib_monitor_instance',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances/enable_failover'] = array(
+    'title' => 'Enable Failover',
+    'page callback' => 'aws_ec2_lib_enable_failover',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' enable failover'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances/disable_failover'] = array(
+    'title' => 'Disable Failover',
+    'page callback' => 'aws_ec2_lib_disable_failover',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' disable failover'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/instances/describe/%/console'] = array(
+    'title' => 'Console',
+    'description' => 'Console',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_instance_console', $cloud_context, 4),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'file' => '',
+    'weight' => 3,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+
+  $items[$cloud_menu_path . '/instances/describe/%/console_output'] = array(
+    'title' => 'Console Output',
+    'description' => 'Console Output',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_instance_console_output', $cloud_context, 4),
+    'access arguments' => array($cloud_context . ' list instances'),
+    'weight' => 5,
+    'file' => '',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+
+  $items[$cloud_menu_path . '/images'] = array(
+    'title' => 'Images',
+    'description' => 'Images',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_images_list', $cloud_context, 'all'),
+    'weight' => 2,
+    'access arguments' => array($cloud_context . ' list images'),
+    'file' => '',
+  );
+
+  $items[$cloud_menu_path . '/images/all'] = array(
+    'title' => 'All',
+    'description' => 'All',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_images_list', $cloud_context, 'all'),
+    'weight' => 1,
+    'access arguments' => array($cloud_context . ' list images'),
+    'file' => '',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items[$cloud_menu_path . '/images/owner'] = array(
+    'title' => 'Owner',
+    'description' => 'Owner',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_images_list', $cloud_context, 'owner'),
+    'weight' => 2,
+    'access arguments' => array($cloud_context . ' list images'),
+    'file' => '',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items[$cloud_menu_path . '/images/register_image'] = array(
+    'title' => 'Register Image',
+    'description' => 'Images',
+    'page callback' => 'aws_ec2_lib_register_image',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' register image'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/images/bundle_image'] = array(
+    'title' => 'Bundle Image',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_bundle_image_form', $cloud_context),
+    'access arguments' => array($cloud_context . ' register image'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/images/delete'] = array(
+    'title' => 'Delete Image',
+    'page callback' => 'aws_ec2_lib_delete_image',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' delete image'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/security_groups'] = array(
+    'title' => 'Security Groups',
+    'description' => 'Security Groups',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_security_group_list', $cloud_context),
+    'weight' => 3,
+    'access arguments' => array($cloud_context . ' list security group'),
+    'file' => '',
+  );
+
+  $items[$cloud_menu_path . '/security_groups/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'aws_ec2_lib_delete_security_group',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' delete security group'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/security_groups/revoke'] = array(
+    'title' => 'Revoke',
+    'page callback' => 'aws_ec2_lib_revoke_security_group',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' delete security group'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/security_groups/create'] = array(
+    'title' => 'New Security Group',
+    'description' => 'New Security Group',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_create_security_group', $cloud_context),
+    'access arguments' => array($cloud_context . ' register security group'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/security_groups/describe'] = array(
+    'title' => 'Security Group Info',
+    'description' => 'Security Group Info',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_security_group', $cloud_context),
+    'access arguments' => array($cloud_context . ' list security group'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ssh_keys'] = array(
+    'title' => 'SSH Keys',
+    'description' => 'SSH Keys',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_ssh_keys_list', $cloud_context),
+    'weight' => 4,
+    'access arguments' => array($cloud_context . ' list key names'),
+    'file' => '',
+  );
+
+  $items[$cloud_menu_path . '/ssh_keys/create'] = array(
+    'title' => 'Add SSH Key Pair',
+    'description' => 'Add SSH Key Pair',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_create_ssh_key', $cloud_context),
+    'access arguments' => array($cloud_context . ' register key'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ssh_keys/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'aws_ec2_lib_delete_ssh_key',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' delete key'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ssh_keys/describe'] = array(
+    'title' => 'SSH Key Pair Info',
+    'description' => 'SSH Key Pair Info',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_ssh_key', $cloud_context),
+    'access arguments' => array($cloud_context . ' list key fingerprints'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ssh_keys/key_material/%'] = array(
+    'title' => 'Get Key',
+    'page callback' => 'aws_ec2_lib_get_key_material',
+    'page arguments' => array($cloud_context, 4),
+    'access callback' => 'aws_ec2_lib_key_access',
+    'access arguments' => array($cloud_context, 4),
+    'type' => MENU_CALLBACK,
+  );
+  $items[$cloud_menu_path . '/elastic_ips'] = array(
+    'title' => 'Elastic IPs',
+    'description' => 'Elastic IPs',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_elastic_ip_list', $cloud_context),
+    'weight' => 5,
+    'access arguments' => array($cloud_context . ' list IPs'),
+    'file' => '',
+  );
+
+  $items[$cloud_menu_path . '/elastic_ips/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'aws_ec2_lib_delete_elastic_ip',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' delete IP'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/elastic_ips/describe'] = array(
+    'title' => 'Elastic IP Info',
+    'description' => 'Elastic IP Details',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_elastic_ip', $cloud_context),
+    'access arguments' => array($cloud_context . ' list IPs'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ebs_volumes'] = array(
+    'title' => 'Volumes',
+    'description' => 'Volumes',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_ebs_volmues_list', $cloud_context),
+    'weight' => 6,
+    'access arguments' => array($cloud_context . ' list volume'),
+    'file' => '',
+  );
+
+  $items[$cloud_menu_path . '/ebs_volumes/create'] = array(
+    'title' => 'New Volume',
+    'description' => 'New Volume',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_create_ebs_volume', $cloud_context),
+    'access arguments' => array($cloud_context . ' create volume'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ebs_volumes/delete'] = array(
+    'title' => 'Delete Volume',
+    'page callback' => 'aws_ec2_lib_delete_ebs_volume',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' delete volume'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ebs_volumes/detach'] = array(
+    'title' => 'Detach Volume',
+    'page callback' => 'aws_ec2_lib_detach_ebs_volume',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' detach volume'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ebs_volumes/create_snapshot'] = array(
+    'title' => 'Create a Snapshot',
+    'description' => 'Create a Snapshot',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_create_ebs_volume_snapshot', $cloud_context),
+    'access arguments' => array($cloud_context . ' create snapshot'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ebs_volumes/describe'] = array(
+    'title' => 'Volume Info',
+    'description' => 'Volume Details',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_ebs_volume', $cloud_context),
+    'access arguments' => array($cloud_context . ' list volume'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ebs_snapshots'] = array(
+    'title' => 'Snapshots',
+    'description' => 'Volume Snapshots',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_snapshot_list', $cloud_context),
+    'weight' => 7,
+    'access arguments' => array($cloud_context . ' list snapshot'),
+    'file' => '',
+  );
+
+  $items[$cloud_menu_path . '/ebs_snapshots/delete'] = array(
+    'title' => 'Delete Snapshot',
+    'page callback' => 'aws_ec2_lib_delete_snapshot',
+    'page arguments' => array($cloud_context),
+    'access arguments' => array($cloud_context . ' delete snapshot'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[$cloud_menu_path . '/ebs_snapshots/describe'] = array(
+    'title' => 'Volume Snapshot Info',
+    'description' => 'Volume Snapshot Details',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('aws_ec2_lib_display_snapshot_info', $cloud_context),
+    'access arguments' => array($cloud_context . ' list snapshot'),
+    'file' => '',
+    'type' => MENU_CALLBACK,
+  );
+
+  $cloud_list = cloud_get_all_clouds();
+  foreach ($cloud_list as $cloud_context) {
+
+    $items['design/server_templates/' . $cloud_context . '/ec2_lib_callback_list_machine_images'] = array(
+      'title' => 'List Images',
+      'page callback' => 'aws_ec2_lib_callback_list_machine_images',
+      'page arguments' => array($cloud_context),
+      'access arguments' => array('create server template'),
+      'file' => '',
+      'type' => MENU_CALLBACK,
+    );
+
+    $items['design/server_templates/' . $cloud_context . '/ec2_lib_callback_list_kernel_images'] = array(
+      'title' => 'List Images',
+      'page callback' => 'aws_ec2_lib_callback_list_kernel_images',
+      'page arguments' => array($cloud_context),
+      'access arguments' => array('create server template'),
+      'file' => '',
+      'type' => MENU_CALLBACK,
+    );
+
+
+    $items['design/server_templates/' . $cloud_context . '/ec2_lib_callback_list_ramdisk_images'] = array(
+      'title' => 'List Images',
+      'page callback' => 'aws_ec2_lib_callback_list_ramdisk_images',
+      'page arguments' => array($cloud_context),
+      'access arguments' => array('create server template'),
+      'file' => '',
+      'type' => MENU_CALLBACK,
+    );
+
+
+
+  }
+  return $items;
+  // End of EC2 Menu
+}
+
+/**
+ * Function to determine access to ssh key materials.
+ * This permission check makes sure a user that can only
+ * access their own console receives the same access to the
+ * ssh key.
+ *
+ * Users without permissions will not be able to access the
+ * private key
+ */
+function aws_ec2_lib_key_access($cloud_context, $key_name) {
+  global $user;
+  if ($user->uid == 1) {
+    return TRUE;
+  }
+  if (user_access($cloud_context . ' access own console')) {
+    $user_keys_all = aws_ec2_lib_get_all_keys($cloud_context);
+    if (in_array($key_name, $user_keys_all)) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+  return user_access($cloud_context . ' access all console');
+}
+
+/**
+ * Return the permissions for a Sub-cloud
+ *
+ * @param $cloud_context
+ *          sub-cloud
+ * @return
+ */
+function aws_ec2_lib_get_permission($cloud_context) {
+
+  $tmp_perm_arr = array(
+    'administer cloud'        ,
+    'list instances'          ,
+    'launch instance'         ,
+    'bundle instance'         ,
+    'terminate all instances',
+    'terminate own instance'  ,
+    'access all console'      ,
+    'access own console'      ,
+    'list images'             ,
+    'register image'          ,
+    'delete image'            ,
+    'list key fingerprints'   ,
+    'list key names'          ,
+    'register key'            ,
+    'update key'              ,
+    'delete key'              ,
+    'list IPs'                ,
+    'add IP'                  ,
+    'delete IP'               ,
+    'assign IP'               ,
+    'update instance details',
+    'list security group'     ,
+    'register security group',
+    'setup security group'    ,
+    'delete security group'   ,
+    'list volume'             ,
+    'create volume'           ,
+    'delete volume'           ,
+    'attach volume'           ,
+    'detach volume'           ,
+    'list snapshot'           ,
+    'create snapshot'         ,
+    'delete snapshot'         ,
+    'display cpu load'        ,
+    'display traffic amount'  ,
+    'display storage space'   ,
+    'list template'           ,
+    'create template'         ,
+    'update template'         ,
+    'update own template'     ,
+    'delete template'         ,
+    'delete own template'     ,
+    'copy template'           ,
+    'access report'           ,
+    'enable failover'         ,
+    'disable failover'        ,
+  );
+
+
+  $perm_arr = array();
+  foreach ($tmp_perm_arr as $key) {
+
+    // Add Cloud Context to the permission array
+    $perm_arr[] = $cloud_context . ' ' . $key;
+  }
+
+  return $perm_arr;
+}
+
+/**
+ *
+ *  Create a new template which will be used for launching instance
+ *
+ * @param $form_submit
+ *          The form
+ * @param $cloud_context
+ *          Sub-cloud for which the template is to be created
+ * @param $params
+ *          Parameters to be passed
+ * @return
+ */
+function aws_ec2_lib_server_templates_new($form, $form_submit = '', $cloud_context, $params = array()) {
+  //include js file for Scripts - switching n order from left to right
+  drupal_add_js(cloud_get_module_base() . 'js/json2.js'          );
+  drupal_add_js(cloud_get_module_base() . 'js/selectbox.js'      );
+  drupal_add_js(cloud_get_module_base() . 'js/cloud_scripting.js');
+
+  $scripting_options    = cloud_server_templates_get_scripting_options();
+  $server_template_id   = !empty($params['templateid'])
+                        ? $params['templateid']
+                        : '';
+  $selected_scripts_ids = array();
+  $selected_scripts     = array();
+
+  $cloud_type = !empty($cloud_context) ? $cloud_context : '';
+  $action = t('Add');
+  $form['header'] = array(
+    '#type' => 'value',
+    '#value' => array(array(
+        'data' => t('Name'),
+        'field' => 'template_nickname',
+        'sort' => 'asc',
+        'width' => '120',
+      )),
+  );
+
+  if ($server_template_id && is_numeric($server_template_id) ) {
+
+    $query        = _aws_ec2_lib_get_server_template_details_by_id($server_template_id, $cloud_context);
+
+    $result       = db_query( $query, array(':cloud_type' => $cloud_context) )->fetchObject();
+
+    $template_obj = $result;
+
+
+    $count  = 0;
+    $action = t('Edit');
+
+    $cloud_type = $template_obj->cloud_type;
+    $cloud_context = $cloud_type;
+  }
+
+  $base = cloud_get_module_base();
+
+  $form['fieldset_template_info'] = array('#type' => 'fieldset' /* '#title' => t('Template Info') */);
+
+  $form['name']['name_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Name'),
+    '#required' => TRUE  ,
+  );
+  $form['name']['name_text'] = array(
+    '#type' => 'textfield',
+    '#size' => 100,
+  );
+  $form['description']['description_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Description'),
+  );
+  $form['description']['description_text'] = array(
+    '#type' => 'textarea',
+  );
+
+  $cloud_type_options = cloud_get_clouds();
+  $cloud_name_list = cloud_get_all_clouds_display_name();
+  $form['cloud_type']['cloud_type_label'  ] = array(
+    '#type' => 'item',
+    '#title' => t('Cloud Type'),
+  );
+  $form['cloud_type']['cloud_type_display'] = array(array(
+      '#markup' => check_plain( $cloud_name_list[$cloud_context] ),
+    ));
+  $form['cloud_type']['cloud_type_select'] = array(
+    '#type' => 'hidden',
+    '#value' => isset_variable($cloud_context),
+  );
+  //$form['cloud_type']['cloud_type_select'] = array('#type' => 'select', '#options' => $cloud_type_options );
+  //if ($action!='Edit') {
+  //$form['cloud_type']['cloud_type_select']['#attributes'] = array('onChange' => 'javaScript:document.forms[0].submit()');
+  //}
+  $instance_type_options = _cloud_server_templates_get_instance_type_list($cloud_context);
+
+  $form['instance_type']['instance_type_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Instance Type'),
+  );
+  $form['instance_type']['instance_type_select'] = array(
+    '#type' => 'select',
+    '#options' => $instance_type_options,
+  );
+
+  $default_instance_type = 'm1.small'; //_cloud_server_templates_get_default_instance_type($cloud_context) ;
+  if (isset($default_instance_type) ) {
+
+    $form['instance_type']['instance_type_select']['#default_value'] = $default_instance_type;
+  }
+
+  $image_options = aws_ec2_lib_get_all_images_db($cloud_context, 'machine');
+  $image_options_keys = array_keys($image_options);
+  $form['ec2_image_lbl']['ec2_image_id_label'] = array(
+    '#type' => 'item'     ,
+    '#title' => t('EC2 Image'),
+    '#required' => TRUE       ,
+  );
+  $form['ec2_image_id'] = array(
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
+  );
+  $form['ec2_image_id']['ec2_image_id_select'] = array(
+    '#autocomplete_path' => 'design/server_templates/' . $cloud_context . '/ec2_lib_callback_list_machine_images',
+    '#type' => 'textfield',
+    '#size' => 100,
+  );
+
+  //$form['ec2_image_id']['ec2_image_id_select']   = array('#type' => 'select', '#options' => $image_options ,  "#attributes" =>  array( 'style' => "width: 225px" )  );
+  //$form['ec2_image_id']['ec2_image_id_select']['#default_value'] = $image_options_keys[0];
+
+  $form['kernel_image_lbl']['kernel_image_id_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Kernel Image'),
+    '#description' => t('Blank is okay.'),
+  );
+  $kernel_image_options = aws_ec2_lib_get_all_images_db($cloud_context, 'kernel');
+  $form['kernel_image_id'] = array(
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
+  );
+  $form['kernel_image_id']['kernel_image_id_select'] = array(
+    '#autocomplete_path' => 'design/server_templates/' . $cloud_context . '/ec2_lib_callback_list_kernel_images',
+    '#type' => 'textfield',
+    '#size' => 100,
+  );
+  //$form['kernel_image_id']['kernel_image_id_select'] = array('#type' => 'select', '#options' => $kernel_image_options ,  "#attributes" =>  array( 'style' => "width: 225px" )  );
+  //$form['kernel_image_id']['kernel_image_id_select']['#default_value'] = $kernel_image_options[0];
+
+  $form['ramdisk_image_lbl']['ramdisk_image_id_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Ramdisk Image'),
+    '#description' => t('Blank is okay.'),
+  );
+  $ramdisk_image_options = aws_ec2_lib_get_all_images_db($cloud_context, 'ramdisk');
+  $form['ramdisk_image_id'] = array(
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
+  );
+
+  //$form['ramdisk_image_id']['ramdisk_image_id_text']  = array('#type' => 'textfield', '#size' => 40 ,  "#attributes" => array( "onKeyUp" => "ramFilter.set(this.value); " ) );
+  $form['ramdisk_image_id']['ramdisk_image_id_select'] = array(
+    '#autocomplete_path' => 'design/server_templates/' . $cloud_context . '/ec2_lib_callback_list_ramdisk_images',
+    '#type' => 'textfield',
+    '#size' => 100,
+  );
+
+  //$form['ramdisk_image_id']['ramdisk_image_id_select'] = array('#type' => 'select', '#options' => $ramdisk_image_options ,  "#attributes" =>  array( 'style' => "width: 225px" )  );
+  //$form['ramdisk_image_id']['ramdisk_image_id_select']['#default_value'] = $ramdisk_image_options[0];
+
+  $form['user_name_details']['user_name_label'] = array(
+    '#type' => 'item',
+    '#title' => t('User Name'),
+    '#required' => TRUE     ,
+  );
+
+  $form['user_name_details']['user_name_text'] = array(
+    '#type' => 'textfield',
+    '#size' => 64,
+    '#default_value' => CLOUD_SSH_USER_NAME,
+  );
+
+  $ssh_key_options = _aws_ec2_lib_get_ssh_keys($cloud_context);
+  asort($ssh_key_options);
+  $form['ssh_keys_details']['ssh_keys_label'] = array(
+    '#type' => 'item'   ,
+    '#title' => t('SSH Key'),
+    '#required' => TRUE     ,
+  );
+  $form['ssh_keys_details']['ssh_keys_select'] = array(
+    '#type' => 'select',
+    '#options' => $ssh_key_options,
+  );
+
+  $security_group_options = _aws_ec2_lib_get_security_groups($cloud_context);
+  asort($security_group_options);
+  $form['SG_details']['SG_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Security Group(s)'),
+  );
+  $form['SG_details']['SG_select'] = array(
+    '#type' => 'select',
+    '#options' => $security_group_options,
+    '#multiple' => TRUE,
+  );
+
+  $form['count_details']['Count_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Count'),
+  );
+  $form['count_details']['Count_text'] = array(
+    '#type' => 'textfield',
+  );
+  $form['count_details']['Count_text']['#default_value'] = 1;
+
+  $zone_options = aws_ec2_lib_get_zones($cloud_context);
+  $form['zone_details']['zone_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Availability Zone'),
+  );
+  $form['zone_details']['zone_select'] = array(
+    '#type' => 'select',
+    '#options' => $zone_options,
+  );
+  $form['user_data']['user_data_label'] = array(
+    '#type' => 'item',
+    '#title' => t('User Data'),
+  );
+  $form['user_data']['user_data_text'] = array(
+    '#type' => 'textarea',
+  );
+
+  if ($server_template_id) { // edit case
+    $form['templateid'] = array(
+      '#type' => 'hidden',
+      '#value' => $server_template_id,
+    );
+    $form['name'         ]['name_text'           ]['#default_value']
+      = isset_variable($template_obj->template_nickname);
+    $form['description'  ]['description_text'    ]['#default_value']
+      = isset_variable($template_obj->description);
+    $form['cloud_type'   ]['cloud_type_display'  ]['#default_value']
+      = isset_variable($template_obj->cloud_type);
+    $form['cloud_type'   ]['cloud_type_display'  ]['#attributes'] = array(
+      'disabled' => TRUE,
+    );
+    $form['type_val'     ] = array(
+      '#type' => 'hidden',
+      '#value' => isset_variable($template_obj->cloud_type),
+    );
+    $form['instance_type']['instance_type_select']['#default_value']
+      = isset_variable($template_obj->instance_type);
+    $form['ec2_image_id']['ec2_image_id_select']['#default_value']
+      = isset_variable($template_obj->image_nickname) . ' (' . isset_variable($template_obj->image_id) . ')';
+
+    if ( empty($template_obj->kernel_id) || $template_obj->kernel_id === AWS_EC2_LIB_CLOUD_NONE ) { // Default value
+      $form['kernel_image_id']['kernel_image_id_select']['#default_value'] = '';
+    }
+    else {
+      $form['kernel_image_id']['kernel_image_id_select']['#default_value'] = $kernel_image_options[$template_obj->kernel_id]  ;
+    }
+    if ( empty($template_obj->ramdisk_id) ||    $template_obj->ramdisk_id === AWS_EC2_LIB_CLOUD_NONE ) { // Default value
+      $form['ramdisk_image_id']['ramdisk_image_id_select']['#default_value'] = '';
+    }
+    else {
+      $form['ramdisk_image_id']['ramdisk_image_id_select']['#default_value'] = $ramdisk_image_options[$template_obj->ramdisk_id];
+    }
+
+    $form['user_name_details']['user_name_text'  ]['#default_value'] = isset_variable($template_obj->user_name       ) ? $template_obj->user_name : CLOUD_SSH_USER_NAME;
+    $form['ssh_keys_details']['ssh_keys_select']['#default_value'] = isset_variable($template_obj->key_name        );
+    $form['count_details'    ]['Count_text'      ]['#default_value'] = isset_variable($template_obj->count_instances );
+    $form['SG_details'       ]['SG_select'       ]['#default_value'] = isset_variable($template_obj->group_id        );
+    $form['user_data'        ]['user_data_text'  ]['#default_value'] = isset_variable($template_obj->user_data       );
+
+    $form['zone_details'     ]['zone_select'     ]['#default_value'] = isset_variable($template_obj->placement       );
+
+    if (module_exists('cloud_scripting')) {
+
+
+      $query      = _cloud_server_templates_get_server_templates_scripts($server_template_id);
+      $result1 = db_query( $query);
+
+      $selected_scripts = array();
+      // while ($template_obj = db_fetch_object($result1)) {
+      foreach ($result1 as $template_obj) {
+
+        $selected_scripts[$template_obj->type][$template_obj->script_id] = $template_obj->script_name;
+        $selected_scripts_ids[] = $template_obj->script_id;
+      }
+
+      if (module_exists('cloud_scripting')) {
+        foreach ($scripting_options['CLOUD_SCRIPTING_TYPE_OPTIONS'] as $script => $script_val) {
+
+          if (isset($form[$script])
+          &&    isset($form[$script][$script . '_content'])
+          &&    isset($form[$script][$script . '_content'][$script . '_selected'])
+          &&    isset($form[$script][$script . '_content'][$script . '_selected']['#options'])) {
+            $form[$script][$script . '_content'][$script . '_selected']['#options'] = $selected_scripts[$script];
+          }
+        }
+      }
+    }
+    //$form['alert_id']['alert_id_content']['alert_id_selected']['#options'] = $selected_alerts;
+    //$form['alert_id']['alert_id_select']['#default_value'] = $selected_alerts;
+
+  }
+  else { // Coming from Images Page
+    $image_type = isset( $_REQUEST['image_type'] ) ? $_REQUEST['image_type'] : '';
+
+    if ($image_type === 'machine' ) {
+
+      $def_img_val = isset($_REQUEST['ec2_image_id_select']) ? $_REQUEST['ec2_image_id_select'] : '';
+      $form['ec2_image_id']['ec2_image_id_select']['#default_value'] = $def_img_val;
+    }
+    elseif ($image_type === 'kernel' ) {
+
+      $def_img_val = isset($_REQUEST['ec2_image_id_select']) ? $_REQUEST['ec2_image_id_select'] : '';
+      $form['kernel_image_id']['kernel_image_id_select']['#default_value'] = $def_img_val;
+    }
+    elseif ($image_type === 'ramdisk' ) {
+
+      $def_img_val = isset($_REQUEST['ec2_image_id_select']) ? $_REQUEST['ec2_image_id_select'] : '';
+      $form['ramdisk_image_id']['ramdisk_image_id_select']['#default_value'] = $def_img_val;
+    }
+
+  }
+
+  //on change cloud type case
+
+  if (user_access('set scripts and alerts')) { // permission start{
+    // scripting elements
+    if (module_exists('cloud_scripting')) {
+
+      foreach ($scripting_options['CLOUD_SCRIPTING_TYPE_OPTIONS'] as $script => $script_val) {
+
+        if ( !empty($_REQUEST[$script . '_selected']) ) {
+          $selected_scripts_ids                   = $_REQUEST[$script . '_selected'];
+          //print_r($selected_scripts_ids);
+        }
+        $script_options = array();
+        $script_options = cloud_get_all_scripts($script);
+        //print_r();
+        $script_keys = array_keys($script_options);
+
+        foreach ($selected_scripts_ids as $id) {
+          if (in_array($id, $script_keys)) {
+            $selected_scripts[$script][$id] = $script_options[$id];
+            unset($script_options[$id]);
+          }
+        }
+
+        $form[$script][$script . '_label'] = array(
+          '#type' => 'item',
+          '#title' => t( '@script_val  Script', array('@script_val' => $script_val) ),
+        );
+        //$form['script_id']['script_id_select'] = array('#type' => 'select', '#options' => $script_options,  '#multiple' => TRUE );
+        //$form['script_id']['script_id_select'] = array('#type' => 'select', '#options' => $script_options,  '#multiple' => TRUE );
+
+        $script_elem = array();
+        $script_elem = array(
+          '#prefix' => '<div class="container-inline">',
+          '#type' => 'fieldset',
+          '#suffix' => '</div>',
+          '#collapsible' => TRUE,
+          '#collapsed' => FALSE,
+        );
+        $script_elem[$script . '_select'  ] = array(
+          '#id' => $script . '_select',
+          '#type' => 'select',
+          '#options' => $script_options,
+          '#multiple' => TRUE,
+          '#attributes' => array('style' => 'width:150px;margin:5px 0 5px 0;'),
+        );
+        $script_elem[$script . '_add'     ] = array(
+          '#type' => 'button',
+          '#name' => 'addState'   ,
+          '#value' => '>>',
+          '#attributes' => array(
+            'style' => 'position:absolute;margin-left:0px',
+            'onclick' => 'javascript:return moveElement(' . $script . '_select, ' . $script . '_selected)',
+          ),
+        );
+        $script_elem[$script . '_remove'  ] = array(
+          '#type' => 'button',
+          '#name' => 'removeState',
+          '#value' => '<<',
+          '#attributes' => array('onclick' => 'javascript:return moveElement(' . $script . '_selected, ' . $script . '_select  )'),
+        );
+        $script_elem[$script . '_selected'] = array(
+          '#id' => $script . '_selected',
+          '#type' => 'select',
+          '#options' => array(),
+          '#multiple' => TRUE,
+          '#attributes' => array('style' => 'width:150px;margin:5px 0 5px 0;'),
+        );
+        $script_elem[$script . '_up'      ] = array(
+          '#type' => 'button',
+          '#name' => 'upState'    ,
+          '#value' => '^',
+          '#attributes' => array(
+            'style' => 'position:absolute;margin-left:0px',
+            'onclick' => 'javascript:return moveElementUp(' . $script . '_selected)',
+          ),
+        );
+        $script_elem[$script . '_down'    ] = array(
+          '#type' => 'button',
+          '#name' => 'downState'  ,
+          '#value' => 'v',
+          '#attributes' => array('onclick' => 'javascript:return moveElementDown(' . $script . '_selected)'),
+        );
+        $form[$script][$script . '_content'] = $script_elem;
+        $form[$script][$script . '_content'][$script . '_selected']['#options'] = isset($selected_scripts[$script])
+                                                                                ?          $selected_scripts[$script]
+                                                                                : array();
+      }
+    }
+    /// scripting end
+
+    //failover element
+    $selected_failover_scenarios_ids = array();
+
+    if (module_exists('cloud_failover') &&    $server_template_id) {
+
+      $query = _cloud_server_templates_get_failover_scanarios_by_server_templates();
+      $query_args = array(
+        ':template_id' => '%' . $server_template_id . '%',
+      );
+
+      $selected_failover_scenarios = array();
+
+      $result = db_query( $query, $query_args );
+      $selected_failover_scenarios_ids = array();
+
+      foreach ($result as $template_obj) {
+        $selected_failover_scenarios[$template_obj->fsid] = $template_obj->nickname;
+        $selected_failover_scenarios_ids[]                = $template_obj->fsid;
+      }
+    }
+
+    if (module_exists('cloud_failover')) {
+
+      if ( empty($server_template_id) && ! empty($_REQUEST['failover_scenario_id_selected']) ) {
+
+        $selected_failover_scenarios    = array();
+        $selected_failover_scenarios_ids = $_REQUEST['failover_scenario_id_selected'];
+      }
+
+      $failover_scenario_options = _cloud_failover_scenario_get_all();
+      $failover_scenario_keys    = array_keys($failover_scenario_options);
+
+      if (isset($selected_failover_scenarios_ids) && count($selected_failover_scenarios_ids) > 0) {
+        foreach ($selected_failover_scenarios_ids as $id) {
+          if (in_array($id, $failover_scenario_keys)) {
+            unset($failover_scenario_options[$id]);
+          }
+        }
+      }
+
+      $form['failover_scenario_id']['failover_scenario_id_label'] = array(
+        '#type' => 'item',
+        '#title' => t('Failover Scenarios'),
+      );
+      $failover_scenario_elem = array(
+        '#prefix' => '<div class="container-inline">',
+        '#type' => 'fieldset',
+        '#suffix' => '</div>',
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+      );
+      $failover_scenario_elem['failover_scenario_id_select'  ] = array(
+        '#id' => 'failover_scenario_id_select',
+        '#type' => 'select',
+        '#options' => $failover_scenario_options,
+        '#multiple' => TRUE,
+        '#attributes' => array('style' => 'width:150px;margin:5px 0 5px 0;'),
+      );
+      $failover_scenario_elem['failover_scenario_id_add'     ] = array(
+        '#type' => 'button',
+        '#name' => 'addFailoverScanerio',
+        '#value' => '>>',
+        '#attributes' => array(
+          'style' => 'position:absolute;margin-left:0px',
+          'onclick' => 'javascript:return moveElement(failover_scenario_id_select, failover_scenario_id_selected)',
+        ),
+      );
+      $failover_scenario_elem['failover_scenario_id_remove'  ] = array(
+        '#type' => 'button',
+        '#name' => 'removeFailoverScenario',
+        '#value' => '<<',
+        '#attributes' => array('onclick' => 'javascript:return moveElement(failover_scenario_id_selected, failover_scenario_id_select)'),
+      );
+      $failover_scenario_elem['failover_scenario_id_selected'] =  array(
+        '#id' => 'failover_scenario_id_selected',
+        '#type' => 'select',
+        '#options' => array(),
+        '#multiple' => TRUE,
+        '#attributes' => array('style' => 'width:150px;margin:5px 0 5px 0;'),
+      );
+      $form['failover_scenario_id']['failover_scenario_id_content'] = $failover_scenario_elem;
+      $form['failover_scenario_id']['failover_scenario_id_content']['failover_scenario_id_selected']['#options'] = isset($selected_failover_scenarios) ? $selected_failover_scenarios : array();
+    }
+    //failover end
+    $selected_alerts_ids = array();
+    //alert element
+    if (module_exists('cloud_alerts') &&    $server_template_id) {
+
+      $query = _cloud_server_templates_get_alerts_by_server_templates();
+
+      $query_args = array(
+        ':template_id' => '%' . $server_template_id . '%',
+      );
+
+      $selected_alerts = array();
+
+      $result1 = db_query( $query, $query_args );
+
+      $selected_alerts_ids = array();
+
+      foreach ($result1 as $template_obj) {
+        $selected_alerts[$template_obj->alert_id]  = $template_obj->alert_name;
+        $selected_alerts_ids[]                     = $template_obj->alert_id;
+      }
+    }
+
+    if (module_exists('cloud_alerts')) {
+
+      if ( empty($server_template_id) && ! empty($_REQUEST['alert_id_selected']) ) {
+        $selected_alerts = array();
+        $selected_alerts_ids                   = $_REQUEST['alert_id_selected'];
+      }
+      $alert_options = _cloud_alerts_get_all();
+      $alert_keys = array_keys($alert_options);
+      if (isset($selected_alerts_ids) && count($selected_alerts_ids) > 0) {
+        foreach ($selected_alerts_ids as $id) {
+          if (in_array($id, $alert_keys)) {
+            //$selected_alerts[$id] = $alert_options[$id];
+            unset($alert_options[$id]);
+          }
+        }
+      }
+      //print_r($selected_alerts);print 'here';
+      $form['alert_id']['alert_id_label'] = array(
+        '#type' => 'item',
+        '#title' => t('Alerts'),
+      );
+      $alert_elem = array(
+        '#prefix' => '<div class="container-inline">',
+        '#type' => 'fieldset',
+        '#suffix' => '</div>',
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+      );
+      $alert_elem['alert_id_select'  ] = array(
+        '#id' => 'alert_id_select',
+        '#type' => 'select',
+        '#options' => $alert_options,
+        '#multiple' => TRUE,
+        '#attributes' => array('style' => 'width:150px;margin:5px 0 5px 0;'),
+      );
+      $alert_elem['alert_id_add'     ] = array(
+        '#type' => 'button',
+        '#name' => 'addAlert',
+        '#value' => '>>',
+        '#attributes' => array(
+          'style' => 'position:absolute;margin-left:0px',
+          'onclick' => 'javascript:return moveElement(alert_id_select, alert_id_selected)',
+        ),
+      );
+      $alert_elem['alert_id_remove'  ] = array(
+        '#type' => 'button',
+        '#name' => 'removeAlert',
+        '#value' => '<<',
+        '#attributes' => array('onclick' => 'javascript:return moveElement(alert_id_selected, alert_id_select)'),
+      );
+      $alert_elem['alert_id_selected'] =  array(
+        '#id' => 'alert_id_selected',
+        '#type' => 'select',
+        '#options' => array(),
+        //'#value'      => '',
+        '#multiple' => TRUE,
+        '#attributes' => array('style' => 'width:150px;margin:5px 0 5px 0;'),
+      );
+      $form['alert_id']['alert_id_content'] = $alert_elem;
+      $form['alert_id']['alert_id_content']['alert_id_selected']['#options'] = isset($selected_alerts) ? $selected_alerts : array();
+    }
+    /// alert end
+  }
+  //permission end
+  $form['submit_buttons'] = array(
+    '#type' => 'fieldset',
+    '#prefix' => '<span class="clear"></span><div class="container-inline"><div class="buttons">',
+    '#suffix' => '</div></div>',
+  );
+
+  $form['submit_buttons'][$action] = array(
+    '#type' => 'submit',
+    '#value' => t($action),
+    '#attributes' => array('onclick' => "javascript:selectAllTemplateOptions(); "),
+  );
+  $form['submit_buttons']['Cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+  );
+
+  //print_r($form['cloud_type']);die;
+  return $form;
+}
+
+
+function aws_ec2_lib_server_templates_view_validate($form_id, $form_values) {
+
+  $form_values = $form_values['values'];
+  _cloud_server_templates_view_submit($form_id, $form_values);
+}
+
+
+/**
+ * Display the template
+ *
+ * @param $form_submit
+ *              Form to be displayed
+ * @param $cloud_context
+ *              Template is of this Sub-cloud
+ * @param $params
+ *              Params to be passed
+ * @return
+ */
+function aws_ec2_lib_server_templates_view($form, $form_submit = '', $cloud_context = '', $params = array()) {
+
+  if (user_access('view server template') === FALSE ) {
+
+    drupal_set_message(t('You are not authorized to access this page.'));
+    drupal_goto( CLOUD_SERVER_TEMPLATES_PATH );
+    return;
+  }
+
+  $server_template_id   = !empty($params['templateid']) ? $params['templateid'] : '';
+  $scripting_options    = cloud_server_templates_get_scripting_options();
+  $selected_scripts_ids = array();
+  $selected_scripts     = array();
+  $cloud_type           = '';
+  $action               = 'Add';
+
+  if ($server_template_id) {
+
+    $query         = _aws_ec2_lib_get_server_template_details_by_id($server_template_id, $cloud_context);
+
+    $result        = db_query( $query, array(':cloud_type' => $cloud_context) )->fetchObject();
+    $count         = 0;
+
+    $template_obj  = $result;
+    $action        = t('Edit');
+
+    $cloud_type    = $template_obj->cloud_type;
+    $cloud_context = $cloud_type;
+
+  }
+
+  $cloud_type = !empty($cloud_type)
+        ?  $cloud_type
+        : '';
+  $cloud_context = $cloud_type;
+
+  $cloud_type_options = cloud_get_all_clouds();
+
+  $form['fieldset_template_info'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Details'),
+  );
+
+  $form['name']['name_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Name'),
+  );
+  $form['name']['name_text'] = array(
+    '#type' => 'textfield',
+    '#size' => 100,
+  );
+  $form['description']['description_label'] = array(
+    '#type' => 'item',
+    '#title' => t('Description'),
+  );
+  $form['description']['description_text'] = array(
+    '#type' => 'textarea',
+  );
+  $form['cloud_type']['cloud_type_label'  ] = array(
+    '#type' => 'item',
+    '#title' => t('Cloud Type'),
+  );
+  $form['cloud_type']['cloud_type_select'] = array(
+    '#type' => 'select',
+    '#options' => $cloud_type_options,
+  );
+  if ($action != t('Edit')) {
+    $form['cloud_type']['cloud_type_select']['#attributes'] = array('onChange' => 'javaScript:document.forms[0].submit()');
+  }
+
+  // $instance_type_options = _cloud_server_templates_get_instance_type();
+  $instance_type_options = _cloud_server_templates_get_instance_type($cloud_context);
+  $form['instance_type'   ]['instance_type_label'       ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('Instance Type'),
+  );
+  $form['instance_type'   ]['instance_cloud_type_select'] = array(
+    '#type' => 'select',
+    '#options' => $instance_type_options,
+  );
+
+  $image_options = aws_ec2_lib_get_all_images_db($cloud_context, 'machine');
+  $image_options_keys = array_keys($image_options);
+  $form['ec2_image_lbl'   ]['ec2_image_id_label'        ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('EC2 Image'),
+  );
+  $form['ec2_image_id'    ]['ec2_image_id_select'       ] = array(
+    '#type' => 'select',
+    '#options' => $image_options,
+  );
+  //$form['ec2_image_id'    ]['ec2_image_id_select'       ]['#default_value'] = $image_options_keys[0];
+
+  $kernel_image_options = aws_ec2_lib_get_all_images_db($cloud_context, 'kernel');
+  $form['kernel_image_id']['kernel_image_id_label'     ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('Kernel Image'),
+  );
+  $form['kernel_image_id']['kernel_image_id_select'    ] = array(
+    '#type' => 'select',
+    '#options' => $kernel_image_options,
+  );
+  //$form['kernel_image_id' ]['kernel_image_id_select'    ]['#default_value'] = $kernel_image_options[0];
+
+  $ramdisk_image_options = aws_ec2_lib_get_all_images_db($cloud_context, 'ramdisk');
+  $form['ramdisk_image_id']['ramdisk_image_id_label'    ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('Ramdisk Image'),
+  );
+  $form['ramdisk_image_id']['ramdisk_image_id_select'   ] = array(
+    '#type' => 'select',
+    '#options' => $ramdisk_image_options,
+  );
+  //$form['ramdisk_image_id']['ramdisk_image_id_select'   ]['#default_value'] = $ramdisk_image_options[0];
+
+  $form['user_name_details']['user_name_label'          ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('User Name'),
+  );
+  $form['user_name_details']['user_name_text'           ] = array('#type' => 'textfield');
+
+  $ssh_key_options = _aws_ec2_lib_get_ssh_keys($cloud_context);
+  $form['ssh_keys_details']['ssh_keys_label'            ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('SSH Key'),
+  );
+  $form['ssh_keys_details']['ssh_keys_select'           ] = array(
+    '#type' => 'select',
+    '#options' => $ssh_key_options,
+  );
+
+  $security_group_options = _aws_ec2_lib_get_security_groups($cloud_context);
+  $form['SG_details'      ]['SG_label'                  ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('Security Group(s)'),
+  );
+  $form['SG_details'      ]['SG_select'                 ] = array(
+    '#type' => 'select',
+    '#options' => $security_group_options,
+    '#multiple' => TRUE,
+  );
+
+  $form['count_details'   ]['Count_label'               ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('Count'),
+  );
+  $form['count_details'   ]['Count_text'                ] = array('#type' => 'textfield');
+  $form['count_details'   ]['Count_text'                ]['#default_value'] = 1;
+
+  $zone_options = aws_ec2_lib_get_zones($cloud_context);
+  $form['zone_details'    ]['zone_label'                ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('Availability Zone'),
+  );
+  $form['zone_details'    ]['zone_select'               ] = array(
+    '#type' => 'select',
+    '#options' => $zone_options,
+  );
+
+  $form['user_data'       ]['user_data_label'           ] = array(
+    '#type' => 'item'  ,
+    '#title' => t('User Data'),
+  );
+  $form['user_data'       ]['user_data_text'            ] = array('#type' => 'textarea');
+
+  if ($server_template_id) { // edit case
+    $form['templateid'] = array(
+      '#type' => 'hidden',
+      '#value' => $server_template_id,
+    );
+    $template_name   = $template_obj->template_nickname;
+    $cloud_type      = $template_obj->cloud_type;
+    $t_instances     = $template_obj->count_instances;
+    $cloud_name_list = cloud_get_all_clouds_display_name();
+
+    $form['name'            ]['name_text'                 ] = array(array('#markup' => check_plain( isset_variable($template_obj->template_nickname) )));
+    $form['description'     ]['description_text'          ] = array(array('#markup' => check_plain( isset_variable($template_obj->description) )));
+    $form['cloud_type'      ]['cloud_type_select'         ] = array(array('#markup' => t( isset_variable($cloud_name_list[$template_obj->cloud_type]) )));
+    $form['instance_type'   ]['instance_cloud_type_select'] = array(array('#markup' => t( isset_variable($template_obj->instance_type) )));
+    $form['ec2_image_id'    ]['ec2_image_id_select'       ] = array(array('#markup' => t( isset_variable($image_options[$template_obj->image_id]) )));
+    $form['kernel_image_id']['kernel_image_id_select'    ] = array(array('#markup' => t( isset_variable($kernel_image_options[$template_obj->kernel_id]) )));
+    $form['ramdisk_image_id']['ramdisk_image_id_select'   ] = array(array('#markup' => t( isset_variable($ramdisk_image_options[$template_obj->ramdisk_id]) )));
+    $form['user_name_details']['user_name_text'           ] = array(array('#markup' => t( isset_variable(($template_obj->user_name)
+                                                            ? $template_obj->user_name
+                                                            : CLOUD_SSH_USER_NAME) )));
+    $form['ssh_keys_details']['ssh_keys_select'           ] = array(array('#markup' => t( isset_variable(($template_obj->key_name != '-1')
+                                                            ? $template_obj->key_name
+                                                            : AWS_EC2_LIB_CLOUD_NONE) )));
+    $form['count_details'   ]['Count_text'                ] = array(array('#markup' => t( isset_variable($template_obj->count_instances) )));
+    $form['SG_details'      ]['SG_select'                 ] = array(array('#markup' => t( isset_variable($template_obj->group_id) )));
+    $form['user_data'       ]['user_data_text'            ] = array(array('#markup' => check_plain( isset_variable($template_obj->user_data) )));
+
+    $form['zone_details'    ]['zone_select'               ] = array(array('#markup' => t( isset_variable($template_obj->placement) )));
+
+    if (module_exists('cloud_scripting')) {
+
+
+      $query      = _cloud_server_templates_get_server_templates_scripts($server_template_id);
+      $result1 = db_query( $query);
+
+      $selected_scripts = array();
+
+      foreach ($result1 as $template_obj) {
+        //print 'here';
+        $selected_scripts[$template_obj->type][$template_obj->script_id] = $template_obj->script_name;
+        $selected_scripts_ids[] = $template_obj->script_id;
+      }
+
+      if (module_exists('cloud_scripting')) {
+        foreach ($scripting_options['CLOUD_SCRIPTING_TYPE_OPTIONS'] as $script => $script_val) {
+
+          $form[$script][$script . '_label'] = array(
+            '#type' => 'item',
+            '#title' => t( '@script_val Script', array('@script_val' => $script_val) ),
+          );
+          $script_elem = array(
+            '#type' => 'fieldset',
+            '#prefix' => '<div class="container-inline">',
+            '#suffix' => '</div>',
+            '#collapsible' => TRUE,
+            '#collapsed' => FALSE,
+          );
+          $script_elem[$script . '_selected'] =  array(array('#markup' => t( isset_variable(@implode('<br />', $selected_scripts[$script])) )));
+          $form[$script][$script . '_content'] = $script_elem;
+        }
+      }
+    }
+    if (module_exists('cloud_failover')) {
+
+      $query = _cloud_server_templates_get_failover_scanarios_by_server_templates();
+
+      $query_args = array(
+        ':template_id' => '%' . $server_template_id . '%',
+      );
+
+      $selected_failover_scenarios     = array();
+
+      $results = db_query( $query, $query_args );
+
+
+      foreach ($results as $template_obj) {
+
+        $selected_failover_scenarios[$template_obj->fsid] = $template_obj->nickname;
+      }
+
+      $form['failover_scenario_id']['failover_scenario_id_label'] = array(
+        '#type' => 'item',
+        '#title' => t('Failover Scenarios'),
+      );
+      $failover_scenario_elem = array(
+        '#prefix' => '<div class="container-inline">',
+        '#type' => 'fieldset',
+        '#suffix' => '</div>',
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+      );
+      $failover_scenario_elem['failover_scenario_id_selected'] =  array(array('#markup' => t( isset_variable(implode(',', $selected_failover_scenarios)) )));
+      $form['failover_scenario_id']['failover_scenario_id_content'] = $failover_scenario_elem;
+    }
+
+
+    if (module_exists('cloud_alerts')) {
+
+      $query = _cloud_server_templates_get_alerts_by_server_templates();
+
+      $query_args = array(
+        ':template_id' => '%' . $server_template_id . '%',
+      );
+
+      $selected_alerts     = array();
+      $selected_alerts_ids = array();
+
+      $result1 = db_query( $query, $query_args );
+
+
+      foreach ($result1 as $template_obj) {
+        $selected_alerts[$template_obj->alert_id] = $template_obj->alert_name;
+        $selected_alerts_ids[]                    = $template_obj->alert_id;
+      }
+
+      $form['alert_id']['alert_id_label'] = array(
+        '#type' => 'item',
+        '#title' => t('Alerts'),
+      );
+      $alert_elem = array(
+        '#prefix' => '<div class="container-inline">',
+        '#type' => 'fieldset',
+        '#suffix' => '</div>',
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+      );
+      $alert_elem['alert_id_selected'] =  array(array('#markup' => t( isset_variable(implode(',', $selected_alerts)) )));
+      $form['alert_id']['alert_id_content'] = $alert_elem;
+    }
+
+    //$form['alert_id']['alert_id_content']['alert_id_selected']['#options'] = $selected_alerts;
+    //$form['alert_id']['alert_id_select']['#default_value'] = $selected_alerts;
+  }
+
+  $form['submit_buttons'] = array(
+    '#type' => 'fieldset',
+    '#prefix' => '<span class="clear"></span><div class="container-inline"><div class="buttons">',
+    '#suffix' => '</div></div>',
+  );
+
+  if (user_access('launch server template')) {
+
+    // Launch Button
+    $location = check_url(url(CLOUD_SERVER_TEMPLATES_PATH . '/' . $cloud_context . '/' . $server_template_id . '/launch')) . '&id=' . $server_template_id . '&count=' . $t_instances . '&type=' . $cloud_type;
+    $action   = "document.forms[0].action='$location';";
+    $onclick  = $action;
+    $form['submit_buttons']['Launch'] = array(
+      '#type' => 'submit',
+      '#value' => t('Launch'),
+      '#attributes' => array('onclick' => $onclick),
+    );
+  }
+
+  if (user_access('edit server template')) {
+
+    // Copy Button
+    $location = check_url(url(CLOUD_SERVER_TEMPLATES_PATH . '/' . $cloud_context . '/' . $server_template_id . '/copy')) . '&id=' . $server_template_id . '&count=' . $t_instances . '&type=' . $cloud_type;
+    $action   = "document.forms[0].action='$location';";
+    $onclick  = $action;
+    $form['submit_buttons']['Copy'] = array(
+      '#type' => 'submit',
+      '#value' => t('Copy'),
+      '#attributes' => array('onclick' => $onclick),
+    );
+
+    // Edit Button
+    $location = check_url(url(CLOUD_SERVER_TEMPLATES_PATH . '/' . $cloud_context . '/' . $server_template_id . '/edit')) . '&id=' . $server_template_id;
+    $action   = "document.forms[0].action='$location';";
+    $onclick  = $action;
+    $form['submit_buttons']['Edit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Edit'),
+      '#attributes' => array('onclick' => $onclick),
+    );
+
+    // Inputs Button
+    if (module_exists('cloud_inputs') && user_access('edit inputs')) {
+
+      $location = check_url(url('design/cloud_server_templates' . '/' . $server_template_id . '/inputs')) . '&template_id=' . $server_template_id . '&module=cloud_server_templates&type=' . $cloud_context;
+      $action   = "document.forms[0].action='$location';";
+      $onclick  = $action;
+      $form['submit_buttons']['Inputs'] = array(
+        '#type' => 'submit',
+        '#value' => t('Inputs'),
+        '#attributes' => array('onclick' => $onclick),
+      );
+    }
+  }
+
+  if (user_access('delete server template')) {
+
+    // Delete Button
+    $confirm_msg = cloud_get_messagebox(t('Are you sure you want to delete the template "@template_name" ?', array('@template_name' => $template_name)));
+    $location    = check_url(url(CLOUD_SERVER_TEMPLATES_PATH . '/' . $cloud_context . '/' . $server_template_id . '/delete' )) . '&id=' . $server_template_id;
+    $action      = "document.forms[0].action='$location';";
+    $onclick     = $action . $confirm_msg;
+    $form['submit_buttons']['Delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete'),
+      '#attributes' => array('onclick' => $onclick),
+    );
+  }
+
+  $form['submit_buttons']['List Templates'] = array(
+    '#type' => 'submit',
+    '#value' => t('List Templates'),
+  );
+  $form['cloud_context'] = array(
+    '#type' => 'hidden',
+    '#value' => $cloud_context,
+  );
+
+  return $form;
+}
+
+
+function aws_ec2_lib_server_templates_new_validate($form_id, $form_values) {
+
+  $form_values = $form_values['values'];
+  $error = 'false';
+  if ( $form_values['op'] == t('Add')
+    ||     $form_values['op'] == t('Edit') ) {
+
+    //print_r($form_values['ssh_keys_select']); die;
+    if ( !preg_match(CLOUD_SERVER_TEMPLATES_VALID_NOT_EMPTY, $form_values['name_text']) ) {
+      $error = 'true';
+      form_set_error('', t('You must enter valid Template Name'));
+    }
+    else {
+
+      $query      = _cloud_server_templates_get_server_template();
+      $query->condition('template_nickname', $form_values['name_text'], '=');
+      $result = $query->execute()->fetchObject();
+
+      if ($result) {
+        $t_count = 1;
+      }
+      else {
+
+        $t_count = 0;
+      }
+
+      if ($t_count > 0) {
+
+        $db_obj      = $result;
+        $template_id = $db_obj->template_id;
+        if ($template_id != $form_values['templateid']) {
+          $error = 'true';
+          form_set_error('', t('Name is already used by a ServerTemplate.'));
+        }
+      }
+    }
+
+    if (empty($form_values['ssh_keys_select']       )
+      ||          $form_values['ssh_keys_select'] == -1 ) {
+      $error = 'true';
+      form_set_error('',    t('You must enter valid SSH Key'));
+    }
+
+
+    // Check EC2 Image 
+    $img_found_flag = FALSE;
+    $image_id = _cloud_server_templates_get_first_element_image($form_values['ec2_image_id_select']);
+    $query_img_srch = _aws_ec2_lib_get_image_query($form_values['cloud_type_select']);
+    $query_img_srch_args = array(
+      ':image_id' => $image_id,
+    );
+
+
+    $result_img_srch = db_query( $query_img_srch, $query_img_srch_args );
+
+    foreach ($result_img_srch as $image) {
+
+      $img_found_flag = TRUE;
+    }
+
+    if ( $img_found_flag === FALSE  ) {
+      $error = 'true';
+      form_set_error('',    t('You must select EC2 Image'));
+    }
+    elseif (!preg_match(CLOUD_VALID_DIGIT, $form_values['Count_text']     )
+      ||                                       $form_values['Count_text'] == 0) {
+      $error = 'true';
+      form_set_error('', t('Please enter valid count value. The number must be more than one (1).'));
+    }
+
+    // Validate Kernel image
+    if ($error !== 'true' ) {
+
+      $ker_img_srch = _aws_ec2_lib_validate_image($form_values['cloud_type_select'], $form_values['kernel_image_id_select'] );
+      if ( $ker_img_srch === FALSE  ) {
+        $error = 'true';
+        form_set_error('',    t('You must select correct kernel image'));
+      }
+      else {
+
+        $ker_img_srch = _aws_ec2_lib_validate_image($form_values['cloud_type_select'], $form_values['ramdisk_image_id_select'] );
+        if ( $ker_img_srch === FALSE  ) {
+          $error = 'true';
+          form_set_error('',    t('You must select correct ramdisk image'));
+        }
+      }
+
+      if (empty($form_values['user_name_text']) ) {
+
+        $error = 'true';
+        form_set_error('',    t('You must enter valid User Name'));
+      }
+    }
+  }
+
+  if ($error == 'false') {
+    return _cloud_server_templates_new_submit($form_id, $form_values);
+  }
+}
+
+
+function _aws_ec2_lib_validate_image($cloud_context, $image_name) {
+
+  $img_found_flag = FALSE;
+  $image_id = _cloud_server_templates_get_first_element_image($image_name);
+  if ( CLOUD_SERVER_TEMPLATES_NONE === $image_id ) {
+    return TRUE;
+  }
+
+  $image_id = trim($image_id);
+  if (empty($image_id)) {
+    return FALSE;
+  }
+
+
+  $query_img_srch = _aws_ec2_lib_get_image_query($cloud_context);
+  $query_img_srch_args = array(
+    ':image_id' => $image_id,
+  );
+
+
+  $result_img_srch = db_query( $query_img_srch, $query_img_srch_args );
+
+  foreach ($result_img_srch as $image) {
+
+    $img_found_flag = TRUE;
+  }
+
+  return $img_found_flag;
+}
+
+
+function aws_ec2_lib_launch_params($cloud_context, $launch_params = array() ) {
+
+  if (  empty($launch_params) || isset($launch_params['template_id']) === FALSE ) {
+
+    return;
+  }
+
+  $redirect = '' ;
+  if (isset($launch_params['redirect']) ) {
+  
+    $redirect = $launch_params['redirect'];
+  }
+
+  $template_id = $launch_params['template_id'];
+
+  $key           = '';
+  $result        = '';
+  $result_launch = '';
+
+  $query         = _cloud_server_templates_get_server_template_details();
+  $query->condition('template_id', $template_id, '=');
+  $result = $query->execute();
+
+  $count  = 0;
+
+  foreach ($result as $key) {
+
+    $user_name = empty($key->user_name) ? CLOUD_SSH_USER_NAME : $key->user_name;
+    $params = array();
+
+    // Set the overriding paramters
+    $nickname         = isset( $launch_params['nickname'] ) ? $launch_params['nickname'] : $key->template_nickname;
+    $key_name         = isset( $launch_params['key_name'] ) ? $launch_params['key_name'] : $key->key_name          ;
+    $placement        = isset( $launch_params['placement'] ) ? $launch_params['placement'] : $key->placement         ;
+    $count_instances  = isset( $launch_params['count_instances'] ) ? $launch_params['count_instances'] : $key->count_instances         ;
+    $grp_str          = isset( $launch_params['security_group'] ) ? $launch_params['security_group'] : $key->group_id;
+    $grp_id           = explode(',', $grp_str );
+
+    $result_launch = _aws_ec2_lib_launch_new_instance(
+  
+      $key->cloud_type      ,  
+      $nickname             ,  
+      $key->image_id        ,  
+      $count_instances      ,  
+      $key_name             ,  
+      $grp_id               ,  
+      $key->user_data       ,  
+      $key->instance_type   ,  
+      $placement            ,  
+      $key->kernel_id       ,  
+      $key->ramdisk_id      ,  
+      $params               ,  
+      $user_name
+    );
+
+    $count = $count + 1;
+  }
+
+  $new_instance_ids = array();
+
+  if ( $result_launch) {
+
+    $new_instance_ids = isset($_REQUEST['new_instance_ids']) ? $_REQUEST['new_instance_ids'] : array();
+    // Allow other modules to handle instance data
+    foreach ($new_instance_ids as $new_instance_id) {
+      $new_instance_id = (string) $new_instance_id;
+      cloud_action_notify('launch', array('cloud_context' => $cloud_context, 'instance_id' => $new_instance_id, 'template_id' => $template_id));
+    }
+    _aws_ec2_lib_set_scripts_to_exec( $new_instance_ids, $template_id, $cloud_context  );
+  }
+  else {
+    if (empty($redirect)) {
+      if ( $count == 0) {
+        drupal_set_message(check_plain(t('Failed to launch instance. Template not found: @template_id', array('@template_id' => $template_id) ) ), 'error' );
+      }
+      else {
+        drupal_set_message(t('Failed to launch instance.'),    'error' );
+      }
+    }
+  }
+  //Return array of newly launched instances.
+
+  if (empty($redirect)) {
+    return $result_launch;
+  }
+  else {
+    return $new_instance_ids;
+  }
+}
+
+/**
+ *  Launch Instance using Server Tempalte
+ *
+ * @param $cloud_context
+ *              Sub-cloud for which instance is to be launched
+ * @param $params
+ *              Params to be passed
+ * @return
+ */
+function aws_ec2_lib_server_templates_launch($cloud_context, $params = array()) {
+
+  $template_id = !empty($params['templateid']) ? $params['templateid'] : '';
+  $cloud_type = _cloud_server_templates_get_cloud($template_id);
+  //print $cloud_context;die;
+  $binded_scripts = array();
+  if (empty($template_id)
+    || strlen($template_id) == 0  ) {
+
+    drupal_goto( CLOUD_SERVER_TEMPLATES_PATH . '/list/' . $cloud_context);
+
+    return;
+  }
+
+  if (module_exists('cloud_scripting')) {
+
+    //get template scripts  
+    if ($template_id) {
+
+      $query      = _cloud_server_templates_get_server_for_copy( $edit = TRUE );
+      $query_args = array(
+        ':template_id' => $template_id,
+      );
+
+
+      $result1 = db_query( $query, $query_args );
+
+
+      foreach ($result1 as $template_obj) {
+
+        $script_root = ''  ;
+        $file_name        = $script_root . 'script_' . $template_obj->script_id . '.sh';
+        $binded_scripts[] = $file_name;
+        //createFile($file_name, $template_obj->script_template);
+      }
+    }
+    //get template scripts   
+  }
+
+  $query_args   = array();
+  $query = '';
+  $result = '';
+  $key = '';
+
+  $query         = _cloud_server_templates_get_server_template_details();
+  $query->condition('template_id', $template_id, '=');
+  $result = $query->execute();
+
+  $count  = 0;
+
+
+  foreach ($result as $key) {
+
+    $user_name = empty($key->user_name) ? CLOUD_SSH_USER_NAME : $key->user_name;
+    $params = array(
+      'bindedScripts' => $binded_scripts,
+      'cloud_type' => $key->cloud_type,
+    );
+    $grp_id  = explode(',', $key->group_id);
+
+    $result_launch = _aws_ec2_lib_launch_new_instance(
+
+       $key->cloud_type        ,   
+       $key->template_nickname,       
+       $key->image_id          ,   
+       $key->count_instances   ,     
+       $key->key_name          ,   
+       $grp_id                 ,     
+       $key->user_data         ,  
+       $key->instance_type     ,     
+       $key->placement         ,     
+       $key->kernel_id         ,     
+       $key->ramdisk_id        ,   
+       $params                 ,  
+       $user_name 
+      );
+
+    $count = $count + 1;
+  }
+
+  if ( $result_launch) {
+
+    $new_instance_ids = isset($_REQUEST['new_instance_ids']) ? $_REQUEST['new_instance_ids'] : array();
+
+    // Allow other modules to handle instance data
+    foreach ($new_instance_ids as $new_instance_id) {
+      $new_instance_id = (string) $new_instance_id;
+      cloud_action_notify('launch', array('cloud_context' => $cloud_context, 'instance_id' => $new_instance_id, 'template_id' => $template_id));
+    }
+
+    _aws_ec2_lib_set_scripts_to_exec( $new_instance_ids, $template_id, $cloud_context  );
+    drupal_goto('clouds/' . $cloud_context . '/instances');
+  }
+  else {
+
+    if ( $count == 0 ) {
+      drupal_set_message(check_plain(t('Failed to launch instance. Template not found: @template_id', array('@template_id' => $template_id) ) ), 'error' );
+    }
+    else {
+      drupal_set_message(t('Failed to launch instance.'), 'error' );
+    }
+
+    drupal_goto( CLOUD_SERVER_TEMPLATES_PATH . '/list/' . $cloud_context);
+  }
+}
+
+
+function aws_ec2_lib_action($cloud_context, $op, $params) {
+
+  switch ($op) {
+
+    case 'launch':
+      aws_ec2_lib_server_templates_launch( $cloud_context, $params );
+      return;
+
+    case 'launch_using_params':
+      return aws_ec2_lib_launch_params( $cloud_context, $params );
+
+    case 'terminate':
+      return aws_ec2_lib_terminate_instance( $cloud_context, $params);
+
+    case 'terminate_using_params':
+      return aws_ec2_lib_terminate_instance_using_params($cloud_context, $params);
+
+    case 'check_key_sg_data':
+      return aws_ec2_lib_has_instances_data($cloud_context);
+
+    case 'check_key_data':
+      return aws_ec2_lib_has_ssh_key_data($cloud_context);
+
+    case 'check_sg_data':
+      return aws_ec2_lib_has_security_group_data($cloud_context);
+
+    case 'get_images_count':
+      return _aws_ec2_lib_get_images_list_count($cloud_context);
+
+    case 'backup':
+
+      $myclient =  aws_ec2_api_create_snapshot( $cloud_context, $params['volume_id'], $params['snapshot_description'] );
+      $result = FALSE;
+      if ( $myclient->code == 200 && isset($myclient->data)) {
+        $result   = _aws_ec2_lib_save_create_snapshot( $cloud_context, $myclient, $params['snapshot_name'], $params['snapshot_description'] );
+      }
+      if ($result) {
+        $response = new SimpleXMLElement($myclient->data);
+        $result = (string) $response->snapshotId;
+      }
+      return $result;
+
+    case 'detach_volume':
+
+      $myclient = aws_ec2_api_detach_volume($cloud_context, $params['volume_id']);
+      $result = FALSE;
+      if ( $myclient->code == 200 ) {
+        $result = _aws_ec2_lib_save_attach_volume( $cloud_context, $myclient );
+      }
+      return $result;
+
+    case 'check_snapshot_completion':
+
+      $ec2_lib_snapshots_table = aws_ec2_lib_get_table_info( AWS_EC2_LIB_SNAPSHOTS_TABLE );
+      $result = db_select($ec2_lib_snapshots_table, 'c')
+        ->fields('c', array('progress') )
+        ->condition('snapshot_id', $params['snapshot_id'], '=')
+        ->execute()
+        ->fetchField();
+
+      return (($result !== FALSE && trim($result) == '100%') ? TRUE : FALSE);
+
+    case 'check_volume_attached_status':
+
+      $ec2_lib_volumes_table = aws_ec2_lib_get_table_info( AWS_EC2_LIB_EBS_VOLUMES_TABLE );
+
+      $result = db_select($ec2_lib_volumes_table, 'c')
+        ->fields('c', array('status') )
+        ->condition('volume_id', $params['volume_id'], '=')
+        ->execute()
+        ->fetchField();
+
+      return (($result !== FALSE && trim($result) == 'available') ? FALSE : TRUE);
+
+    case 'check_instance_terminated':
+
+      $ec2_lib_instances_table = aws_ec2_lib_get_table_info( AWS_EC2_LIB_INSTANCES_TABLE );
+
+
+      $result = db_select($ec2_lib_instances_table, 'c')
+        ->fields('c', array('instance_state_name') )
+        ->condition('instance_id', $params['instance_id'], '=')
+        ->execute()
+        ->fetchField();
+
+
+      if ($result === FALSE) {
+        return TRUE;
+      }
+      elseif (trim($result) == 'terminated') {
+        return TRUE;
+      }
+
+      return FALSE;
+
+    case 'get_instance_lock_status':
+      return _aws_ec2_lib_get_lock_status_by_id_query($params['cloud_context'], $params['instance_id']);
+  }
+}

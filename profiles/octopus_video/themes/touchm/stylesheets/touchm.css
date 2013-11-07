@@ -1,0 +1,73 @@
+
+
+.display-none{
+  display: none;
+}
+#block-system-powered-by{
+  margin: 10px 0;
+  padding: 5px 0;
+  float: right;
+}
+.form-submit{
+  margin-right: 8px;
+}
+.node .field-name-field-image{
+  margin-bottom: 20px;
+}
+ul.primary li a,ul.primary li.active a{
+  border: 0;
+  background: none;
+  margin: 0;
+}
+.node-teaser{
+  border-bottom: 1px dotted #E5E5E5;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+}
+.avatar img{
+  width: 50px;
+  height: 50px;
+}
+.login-block-links a{
+  display: inline;
+}
+.region-top-nav,.region-login-box{
+  float: left;
+}
+.sidebar-widget .item-list ul li{
+  border-bottom: 1px dotted #CCCCCC;
+  font-weight: bold;
+  padding: 10px 0;
+  margin: 0;
+}
+.sidebar-widget .item-list ul{
+  margin-left: 10px;
+}
+.tagadelic{
+  margin-bottom: 4px;
+}
+.pagination li a{
+  background-color: #F2F2F2;
+}
+.region-newsletter .form-item{
+  margin: 0;
+}
+.region-newsletter .form-item label{
+  display: none;
+}
+.region-newsletter .button{
+  margin: 0;
+  height: 28px;
+  padding: 6px 20px 6px !important;
+}
+.flickr_badge_image{
+  float: left;
+}
+.flickr_badge_image img{
+  width: 75px;
+  height: 75px;
+  margin: 0 5px 5px 0;
+}
+.map_location iframe{
+  border: 0 none;
+}

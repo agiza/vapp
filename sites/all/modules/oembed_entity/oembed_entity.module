@@ -1,0 +1,225 @@
+<?php
+/**
+ * @file
+ * Code for the oEmbed Entity module.
+ */
+
+/**
+ * Implements hook_oembedprovider().
+ */
+function oembed_entity_oembedprovider() {
+  $providers = array();
+  $base = url('', array('absolute' => TRUE));
+
+  // Conservative path, not interferring with oembedprovider module.
+  $providers[$base . 'entity/*/*'] = array(
+    'callback' => 'oembed_entity_provider',
+  );
+
+  // Add support for view mode as 3rd argument.
+  $providers[$base . 'entity/*/*/*'] = $providers[$base . 'entity/*/*'];
+
+  if (!variable_get('oembed_entity_aggresive_path_disable', FALSE)) {
+    // Aggressive path, overruling all other oembed providers.
+    $providers[$base . '*/*/*'] = $providers[$base . '*/*'] = $providers[$base . 'entity/*/*'];
+  }
+  return $providers;
+}
+
+/**
+ * The oembed entity provider.
+ *
+ * @see oembedcore_providers()
+ *
+ * @return mixed
+ *   The oembedprovider result array or FALSE if not found.
+ */
+function oembed_entity_provider($provider, $url, $matches) {
+  $block_endless_recursion = &drupal_static(__FUNCTION__, array());
+
+  $result = FALSE;
+  $entity_type = $matches[1];
+  $id = $matches[2];
+  $view_mode = isset($matches[3]) ? $matches[3] : NULL;
+
+  if (!isset($block_endless_recursion[$entity_type . '-' . $id])) {
+    module_load_include('inc', 'oembed', 'oembedprovider');
+
+    // Fail if entity type is not allowed to be provided.
+    if (!user_access("access $entity_type by oembed_entity")) {
+      return FALSE;
+    }
+
+    $block_endless_recursion[$entity_type . '-' . $id] = TRUE;
+
+    $entity = current(entity_load($entity_type, array($id)));
+    if (!$entity) {
+      return FALSE;
+    }
+
+    list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+    $entity_handlers = _oembed_entity_get_handlers($entity_type, $bundle);
+
+    // Use custom access or fall back to default.
+    if (function_exists($entity_handlers['access'])) {
+      $access = $entity_handlers['access']($entity_type, $entity, $entity_handlers);
+    }
+    else {
+      $access = oembed_entity_default_access($entity_type, $entity, $entity_handlers);
+    }
+
+    if (!$access) {
+      return FALSE;
+    }
+
+    // Use custom viewer or fall back to default.
+    if (function_exists($entity_handlers['viewer'])) {
+      $result = $entity_handlers['viewer']($entity_type, $entity, $view_mode, $entity_handlers);
+    }
+    else {
+      $result = oembed_entity_default_viewer($entity_type, $entity, $view_mode, $entity_handlers);
+    }
+
+    $result = _oembedprovider_result('rich', $result);
+    unset($block_endless_recursion[$entity_type . '-' . $id]);
+  }
+  return $result;
+}
+
+/**
+ * Default access callback for entities.
+ *
+ * @param string $entity_type
+ *   Entity type.
+ * @param object $entity
+ *   Entity.
+ * @param array $entity_handlers
+ *   Info about the entity configuration.
+ *
+ * @return array
+ *   oEmbed provider result array.
+ */
+function oembed_entity_default_access($entity_type, $entity, $entity_handlers) {
+  return entity_access('view', $entity_type, $entity, drupal_anonymous_user());
+}
+
+/**
+ * Default viewer for entities.
+ *
+ * @param string $entity_type
+ *   Entity type.
+ * @param object $entity
+ *   Entity.
+ * @param array $entity_handlers
+ *   Info about the entity configuration.
+ *
+ * @return array
+ *   oEmbed provider result array.
+ */
+function oembed_entity_default_viewer($entity_type, $entity, $view_mode = NULL, $entity_handlers = array()) {
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  if (property_exists($entity, 'uid') && $author = user_load($entity->uid)) {
+    $author_name = $author->name;
+    $author_url = url('user/' . $author->uid, array('absolute' => TRUE));
+  }
+  else {
+    $author_name = '';
+    $author_url = '';
+  }
+
+  if (!isset($view_mode)) {
+    $content = drupal_render(entity_view($entity_type, array($entity)));
+  }
+  else {
+    $content = drupal_render(entity_view($entity_type, array($entity), $view_mode));
+  }
+  return array(
+    'html' => $content,
+    'title' => entity_label($entity_type, $entity),
+    'author_name' => $author_name,
+    'author_url' => $author_url,
+  );
+}
+
+/**
+ * Returns info about the selected entity type and bundle.
+ *
+ * @param string $entity_type
+ *   Type of the entity.
+ * @param string $bundle
+ *   Bundle of the $entity.
+ *
+ * @return Array
+ *   Info about the selected type and bundle.
+ */
+function _oembed_entity_get_handlers($entity_type, $bundle) {
+  if (!($cache = cache_get('oembed_entity_handlers'))) {
+    $entity_handlers = array();
+    foreach (entity_get_info() as $entity_name => $entity_data) {
+      foreach ($entity_data['bundles'] as $bundle_name => $bundle_data) {
+        $entity_handlers[$entity_name][$bundle_name] = array();
+        $entity_handlers[$entity_name][$bundle_name]['viewer'] = 'oembed_entity_default_viewer';
+        $entity_handlers[$entity_name][$bundle_name]['access'] = 'oembed_entity_default_access';
+      }
+    }
+    drupal_alter('oembed_entity_handlers', $entity_handlers);
+    cache_set('oembed_entity_handlers', $entity_handlers);
+  }
+  else {
+    $entity_handlers = $cache->data;
+  }
+  return $entity_handlers[$entity_type][$bundle];
+}
+
+/**
+ * Implements hook_permission().
+ */
+function oembed_entity_permission() {
+  $perm = array();
+  foreach (entity_get_info() as $entity_name => $entity_data) {
+    $perm["access $entity_name by oembed_entity"] = array(
+      'title' => t('Access !type_name using oEmbed Entity', array('!type_name' => $entity_data['label'])),
+      'description' => t('Allow Oembed Entity provider to access !type_name entities', array('!type_name' => $entity_data['label'])),
+    );
+  }
+  return $perm;
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * This is only used for redirecting to the proper URLs of the embedded
+ * entities.
+ */
+function oembed_entity_menu() {
+  return array(
+    'entity/%/%' => array(
+      'type' => MENU_CALLBACK,
+      'access arguments' => array('access content'),
+      'page callback' => 'oembed_entity_redirect',
+      'page arguments' => array(1, 2),
+    ),
+  );
+}
+
+/**
+ * Redirect to the proper URL of the chosen entity.
+ *
+ * @param string $entity_type
+ *   Type of the entity.
+ * @param int $id
+ *   Entity ID.
+ */
+function oembed_entity_redirect($entity_type, $id) {
+  $entity = current(entity_load($entity_type, array($id)));
+  $uri = entity_uri($entity_type, $entity);
+  drupal_goto($uri['path'], array(), 301);
+}
+
+/**
+ * Implements hook_oembed_request_element_alter().
+ */
+function oembed_entity_oembed_request_element_alter(&$entity) {
+  global $user;
+  $entity['#cache']['keys'][] = implode(',', array_keys($user->roles));
+}

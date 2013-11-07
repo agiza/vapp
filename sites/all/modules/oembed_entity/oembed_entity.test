@@ -1,0 +1,75 @@
+<?php
+
+/**
+ * @file
+ * Test case for oembed_entity module.
+ */
+
+/**
+ * The OembedEntityTestCase tests oembed_entity functionality and settings.
+ */
+class OembedEntityTestCase extends DrupalWebTestCase {
+
+  protected $admin;
+
+  /**
+   * Info for simpletest.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'oEmbed Entity',
+      'description' => "Tests services provided by oEmbed Entity",
+      'group' => 'oEmbed',
+    );
+  }
+
+  /**
+   * Set up test environment.
+   */
+  public function setUp($modules = array()) {
+    // Enable any modules required for the test.
+    $dependency_modules = array(
+      'oembed_entity',
+    );
+    $modules = array_merge($modules, $dependency_modules);
+    parent::setUp($modules);
+
+    // Creating the needed user.
+    $this->privileged_user = $this->drupalCreateUser(
+      array('access taxonomy_term by oembed_entity')
+    );
+    $this->drupalLogin($this->privileged_user);
+
+    $voc = new stdClass();
+    $voc->name = 'Test vocabulary';
+    $voc->machine_name = 'test_vocabulary';
+    taxonomy_vocabulary_save($voc);
+  }
+
+  /**
+   * Ensures that defaultImages are set as default.
+   */
+  public function testCorrectOutput() {
+    // Check that oembed_provider module is activated.
+    $activated_modules = module_list();
+
+    $voc = taxonomy_vocabulary_machine_name_load('test_vocabulary');
+    $term = new stdClass();
+    $term->vid = $voc->vid;
+    $term->name = 'Test term name';
+    $term->description = 'Test term description';
+    taxonomy_term_save($term);
+    $this->drupalLogin($this->privileged_user);
+
+    $base = url('', array('absolute' => TRUE));
+    $this->drupalGet('oembed/endpoint', array('query' => array('url' => $base . 'taxonomy_term/' . $term->tid)));
+
+    $data = json_decode($this->drupalGetContent());
+    $this->verbose(var_export($data, TRUE));
+
+    // Checks that everything works as expected.
+    $this->assertTrue(strstr($data->html, 'Test term description') !== FALSE, 'The test term description should be shown');
+    $this->assertTrue(strstr($data->html, 'Test term name') !== FALSE, 'The test term name should be shown');
+    $this->assertTrue($data->provider->callback == 'oembed_entity_provider', 'Correct provider should be set');
+  }
+}

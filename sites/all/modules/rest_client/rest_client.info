@@ -1,0 +1,11 @@
+name = REST Client
+description = A robust HTTP REST request API
+core = 7.x
+
+
+; Information added by drupal.org packaging script on 2011-12-21
+version = "7.x-1.0"
+core = "7.x"
+project = "rest_client"
+datestamp = "1324503644"
+

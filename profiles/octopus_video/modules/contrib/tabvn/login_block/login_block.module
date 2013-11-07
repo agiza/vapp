@@ -1,0 +1,45 @@
+<?php
+
+function login_block_block_info() {
+  // This example comes from node.module.
+
+  $blocks['login_block'] = array(
+      'info' => t('[Tabvn] Login block links'),
+          // DRUPAL_CACHE_PER_ROLE will be assumed.
+  );
+
+  return $blocks;
+}
+
+function login_block_block_view($delta = '') {
+  global $user;
+  $block = array();
+
+  switch ($delta) {
+
+
+    case 'login_block':
+      $block['subject'] = '';
+      if ($user->uid > 0) {
+        // user has loged in.
+        $block['content'] = '<div class="login user-control">' . t('Hello') . ', <a href="' . url('user/' . $user->uid) . '"> ' . $user->name . '</a></div>';
+      } else {
+        $content = '<div class="login"><a data-reveal-id="Login" class="button" href="#">' . t('Login') . '</a></div>';
+        $content .= '<div id="Login" class="reveal-modal login-modal">';
+        $content .= '<h2>' . t('Login') . '</h2>';
+        $content .= '<p>' . t('Please login using your credentials recived by email when you register') . '.</p>';
+
+        $form = drupal_get_form('user_login');
+        $form['actions']['#prefix'] = '<p class="right login-block-links">'.l('Create new account' ,'user/register').' | <a href="'.url('user/password').'">'.t('I forgot my password').'</a></p>';
+       
+
+        $content .= drupal_render($form);
+        $content .= '<a class="close-reveal-modal">&#215;</a>';
+        $content .= '</div>';
+        $block['content'] = $content;
+      }
+
+      break;
+  }
+  return $block;
+}

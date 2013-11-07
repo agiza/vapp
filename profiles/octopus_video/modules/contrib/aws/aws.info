@@ -1,0 +1,13 @@
+name = AWS Common
+description = AWS Common Library
+package = AWS
+dependencies[] = rest_client
+core = 7.x
+
+
+; Information added by drupal.org packaging script on 2012-10-05
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "aws"
+datestamp = "1349438756"
+

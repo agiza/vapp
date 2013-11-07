@@ -1,0 +1,73 @@
+
+.fractionslider-wrapper {
+    background: none repeat scroll 0 0 #1B1B1B;
+    border: 1px solid #000000;
+    box-shadow: 0 3px 5px #666666;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+.fractionslider {
+    height: 500px;
+    margin: 0 auto;
+    position: relative;
+    width: 100%;
+}
+.fractionslider .views-field {
+    color: #FFFFFF;
+    position: absolute;
+    top: -200px;
+    white-space: normal;
+    z-index: 8000;
+}
+.fraction-slider {
+    overflow: visible;
+}
+.fraction-slider .slide {
+    display: none;
+}
+.fraction-slider .prev {
+    background: url("images/fs.prevnext.png") no-repeat scroll 0 0 transparent;
+    display: none;
+    height: 30px;
+    left: 10px;
+    position: absolute;
+    top: 185px;
+    width: 30px;
+    z-index: 9999;
+}
+.fraction-slider .prev:hover {
+    background: url("images/fs.prevnext.png") no-repeat scroll 0 -30px transparent;
+}
+.fraction-slider .next {
+    background: url("images/fs.prevnext.png") no-repeat scroll -30px 0 transparent;
+    display: none;
+    height: 30px;
+    position: absolute;
+    right: 10px;
+    top: 185px;
+    width: 30px;
+    z-index: 9999;
+}
+.fraction-slider .next:hover {
+    background: url("images/fs.prevnext.png") no-repeat scroll -30px -30px transparent;
+}
+.fraction-slider:hover .prev, .fraction-slider:hover .next {
+    display: block;
+}
+.fs-pager-wrapper {
+    bottom: 10px;
+    left: 10px;
+    position: absolute;
+    z-index: 9999;
+}
+.fs-pager-wrapper a {
+    background: url("images/fs.pager.png") no-repeat scroll 0 -14px transparent;
+    display: inline-block;
+    height: 14px;
+    margin: 0 5px 0 0;
+    width: 14px;
+}
+.fs-pager-wrapper .active {
+    background: url("images/fs.pager.png") no-repeat scroll 0 0 transparent;
+}

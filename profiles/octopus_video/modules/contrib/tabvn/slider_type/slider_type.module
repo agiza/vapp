@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the slider_type feature.
+ */
+
+include_once 'slider_type.features.inc';

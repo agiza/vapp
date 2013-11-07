@@ -1,0 +1,34 @@
+<?php
+/**
+ * @file
+ * Provide an fractionslider display style for Views.
+ *
+ * This is a placeholder file so drupal will enable the module. All logic is contained in
+ * other files located with the module.
+ */
+
+/**
+ * Implementation of hook_views_api().
+ */
+function views_fractionslider_views_api() {
+  return array('api' => 2);
+}
+
+/**
+* Implements hook_preprocess().
+*/
+function template_preprocess_views_view_fractionslider(&$variables) {
+
+  $view = $variables['view'];
+  $options = $view->style_plugin->options;
+  $variables['viewname'] = $view->name;
+  $variables['class'] = $options['class'];
+  $variables['dataspeed'] = $options['dataspeed'];
+  $variables['datadelay'] = $options['datadelay'];
+  $variables['space'] = $options['space'];
+  $variables['pager'] = $options['pager'];
+  $variables['controls'] = $options['controls'];
+
+  //$path = drupal_get_path('module', 'views_fractionslider');
+  //drupal_add_js($path . '/fractionslider/js/fractionslider.js');
+}

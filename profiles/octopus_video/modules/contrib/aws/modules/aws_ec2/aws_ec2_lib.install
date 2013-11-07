@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * aws_ec2_lib Installation file
+ *
+ * Copyright (c) 2010-2011 DOCOMO Innovations, Inc.
+ *
+ */
+
+module_load_include('module', 'aws_ec2_lib');
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib_constants');
+module_load_include('inc', 'aws_ec2_lib', 'aws_ec2_lib');
+
+
+/**
+ * Implementation of hook_install().
+ */
+function aws_ec2_lib_install() {
+  // Create tables.
+}
+/**
+ * Implementation of hook_uninstall().
+ */
+function aws_ec2_lib_uninstall() {
+  // Remove tables.
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+
+function aws_ec2_lib_schema() {
+  //Install the aws schema as part of aws_ec2_lib module
+  $schema = aws_ec2_lib_get_schema(AWS_EC2_LIB_DB_CONTEXT);
+
+  $schema[AWS_EC2_LIB_BUNDLE_INSTANCES_TABLE] = array(
+    'description' => t('Instances Bundle information'),
+    'fields' => array(
+      'cloud_context' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'instance_id' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'nickname' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'bucketname' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'foldername' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'volume_size' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'status' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+    ),
+  );
+
+  return $schema;
+}

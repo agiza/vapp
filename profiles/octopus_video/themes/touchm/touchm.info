@@ -1,0 +1,60 @@
+name = Touchm
+description = Touchm theme, developed by <a href="http://tabvn.com/">Tabvn</a>.
+core = 7.x
+
+scripts[] = javascripts/foundation.min.js
+scripts[] = javascripts/modernizr.foundation.js
+scripts[] = plugins/slider-revolution/jquery.themepunch.plugins.min.js
+scripts[] = plugins/slider-revolution/jquery.themepunch.revolution.min.js
+scripts[] = plugins/flexislider/jquery.flexslider.js
+scripts[] = javascripts/jquery.tipsy.js
+scripts[] = javascripts/jquery.carouFredSel-6.0.3-packed.js
+scripts[] = javascripts/jquery.touchSwipe.min.js
+scripts[] = plugins/titan/js/prettify.js
+scripts[] = plugins/titan/js/jquery.titanlighbox.js
+scripts[] = javascripts/jquery.isotope.min.js
+scripts[] = javascripts/app-head.js
+scripts[] = javascripts/app.js
+
+
+
+regions[help] = Help
+regions[top_nav] = Top navigation
+regions[login_box] = Login box
+
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom
+regions[highlighted] = Highlighted
+regions[contact_map] = Contact Map
+regions[featured] = Featured
+
+regions[content] = Content
+regions[sidebar_first] = Sidebar first
+regions[sidebar_second] = Sidebar second
+
+regions[newsletter] = Newsletter
+regions[footer_firstcolumn] = Footer first column
+regions[footer_secondcolumn] = Footer second column
+regions[footer_thirdcolumn] = Footer third column
+regions[footer] = Footer
+
+;social links settings
+
+settings[twitter_url] = #
+settings[facebook_url] = #
+settings[google_plus_url] = #
+settings[linkedin_url] = #
+settings[flickr_url] = #
+settings[vimeo_url] = #
+settings[rss_url] = #
+
+;footer copyright message 
+settings[footer_copyright_message] = © 2012 TouchM by Tabvn. All rights reserved
+settings[home_tagline] = We create custom-built, marketing-driven website solutions and online environments that ensure your brand delivers on form and functionality.
+
+;porfolio
+settings[default_portfolio] = 4c
+settings[default_nodes_portfolio] = 12
+
+;skin
+settings[theme_color] = color1

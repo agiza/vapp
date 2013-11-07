@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Provides easy API hook functionality for other Drupal modules
+ * wanting to access AWS Elastic Compute Cloud (EC2)
+ *
+ * Copyright (c) 2010-2011 DOCOMO Innovations, Inc.
+ *
+ */
+
+
+module_load_include('inc', 'aws_ec2_api');
+
+/* *************************  drupal functions    *****************************/
+/**
+ * Implements hook_permission().
+ * @return array An array of valid permissions for the aws module
+ */
+function aws_ec2_api_permission() {
+  return array(
+  );
+}
+
+/**
+ * Implements hook_menu().
+ * @return array A menu api array for the module
+ */
+function aws_ec2_api_menu() {
+  $items = array();
+  return $items;
+}

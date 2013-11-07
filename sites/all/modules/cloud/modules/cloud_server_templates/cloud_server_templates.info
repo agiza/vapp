@@ -1,0 +1,13 @@
+name = Server Templates
+description = Allow to pre-configure servers by starting from a base image.
+package =  Cloud
+dependencies[] = cloud
+core = 7.x
+
+
+; Information added by drupal.org packaging script on 2013-10-30
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "cloud"
+datestamp = "1383135973"
+

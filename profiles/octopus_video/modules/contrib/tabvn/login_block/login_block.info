@@ -1,0 +1,4 @@
+name = Login block
+description = Login block 
+core = 7.x
+package = Tabvn

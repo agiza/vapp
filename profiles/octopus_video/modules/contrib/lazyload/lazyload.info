@@ -1,0 +1,14 @@
+name = Lazyload
+description = "Adds a formatter to images that allows them to lazy load using Javascript Image Asynchronous Loading"
+package = Images
+core = 7.x
+files[] = lazyload.module
+files[] = lazyload.admin.inc
+scripts[] = lazyload.min.js
+
+; Information added by drupal.org packaging script on 2012-06-06
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "lazyload"
+datestamp = "1338941991"
+

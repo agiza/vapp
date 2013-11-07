@@ -1,0 +1,267 @@
+<?php
+/**
+ * @file
+ * Integrate the great lazyload from Fasterize
+ * The module lets you asyncronously load (from generic to specific):
+ * - all the images of the site (override theme_image)
+ * - all the image from image fields
+ * - selected image fields
+ * - user profile pictures
+ *
+ * Original inspiration by the JAIL module
+ *
+ * Copyright (c) 2012 Rue89
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+ */
+
+// Remove lazyload from all administrative pages, see http://drupal.org/node/34970.
+define('LAZYLOAD_PAGES', "admin\nadmin/*\nsystem/*\nbatch\nnode/add*\nnode/*/*\nuser/*/*");
+
+/**
+ * Implements hook_menu().
+ */
+function lazyload_menu() {
+  $items = array();
+  $items['admin/config/media/lazyload'] = array(
+    'title'            => 'Image lazyloading',
+    'description'      => 'Configure lazyloading of images of the website',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('lazyload_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type'             => MENU_NORMAL_ITEM,
+    'file'             => 'lazyload.admin.inc',
+  );
+  return $items;
+}
+
+
+/*
+ * Implements hook_theme_registry_alter
+ */
+function lazyload_theme_registry_alter(&$theme_registry) {
+  if (variable_get('lazyload_image', 0)) {
+    $theme_registry['image']['function'] = 'lazyload_image';
+  }
+  return $theme_registry;
+}
+
+
+/**
+ * Override theme_image
+ */
+function lazyload_image($variables) {
+  if (_lazyload_visibility_pages()) {
+    $attributes = $variables['attributes'];
+    $attributes['src'] = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+    $attributes['onload'] = 'lzld(this)';
+    $attributes['data-src'] = file_create_url($variables['path']);
+    foreach (array('width', 'height', 'alt', 'title') as $key) {
+      if (isset($variables[$key])) {
+        $attributes[$key] = $variables[$key];
+      }
+    }
+    return '<img' . drupal_attributes($attributes) . ' />';
+  } else {
+    return theme_image($variables);
+  }
+}
+
+/**
+ * Based on visibility setting this function returns TRUE if lazyloading code should
+ * be added to the current page and otherwise FALSE.
+ */
+function _lazyload_visibility_pages() {
+  static $page_match;
+
+  // Cache visibility result if function is called more than once.
+  if (!isset($page_match)) {
+
+    $visibility = variable_get('lazyload_visibility_pages', 0);
+    $setting_pages = variable_get('lazyload_pages', LAZYLOAD_PAGES);
+
+    // Match path if necessary.
+    if (!empty($setting_pages)) {
+      // Convert path to lowercase. This allows comparison of the same path
+      // with different case. Ex: /Page, /page, /PAGE.
+      $pages = drupal_strtolower($setting_pages);
+      if ($visibility < 2) {
+        // Convert the Drupal path to lowercase
+        $path = drupal_strtolower(drupal_get_path_alias($_GET['q']));
+        // Compare the lowercase internal and lowercase path alias (if any).
+        $page_match = drupal_match_path($path, $pages);
+        if ($path != $_GET['q']) {
+          $page_match = $page_match || drupal_match_path($_GET['q'], $pages);
+        }
+        // When $visibility has a value of 0, the lazy loading code is displayed on
+        // all pages except those listed in $pages. When set to 1, it
+        // is displayed only on those pages listed in $pages.
+        $page_match = !($visibility xor $page_match);
+      }
+      elseif (module_exists('php')) {
+        $page_match = php_eval($setting_pages);
+      }
+      else {
+        $page_match = FALSE;
+      }
+    }
+    else {
+      $page_match = TRUE;
+    }
+  }
+  return $page_match;
+}
+
+
+/**
+ * Implement preprocess_user_picture
+ */
+function lazyload_preprocess_user_picture(&$variables) {
+ if (!variable_get('lazyload_images', 0) && variable_get('lazyload_users', 0)) {
+   $img_variables['path'] = image_style_url(variable_get('user_picture_style', ''),$variables['account']->picture->uri);
+   $img_variables['attributes']['typeof'] = array('foaf:Image');
+   $variables['user_picture'] = lazyload_image($img_variables);
+ }
+}
+
+
+/**
+ * Override hook_theme
+ */
+function lazyload_theme() {
+  return array(
+    'lazyload_formatter' => array(
+      'variables' => array('item' => NULL, 'path' => NULL, 'lazyload_image_style' => NULL, 'placeholder' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implement hook_field_formatter_info()
+ */
+function lazyload_field_formatter_info() {
+  return array(
+    'lazyload' => array(
+      'label' => t('lazyload load'),
+      'field types' => array('image', 'text'),
+      'settings'  => array(
+        'lazyload_effect' => 'none',
+        'lazyload_image_style' => 'None (original image)',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function lazyload_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $element = array();
+  $image_styles = image_style_options(FALSE);
+
+  $element['lazyload_image_style'] = array(
+    '#title' => t('Image style'),
+    '#type' => 'select',
+    '#default_value' => $settings['lazyload_image_style'],
+    '#empty_option' => t('None (original image)'),
+    '#options' => $image_styles,
+  );
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function lazyload_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  if ($settings['lazyload_image_style']=="") {
+    $jis = "Original";
+  } else {
+    $jis = $settings['lazyload_image_style'];
+  }
+  $summary = t('Images will load Asynchronously when scrolled into view.<br>Using Image Style: @lazyload_image_style', array(
+    '@lazyload_image_style'     => $jis,
+  ));
+  return $summary;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function lazyload_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $settings = $display['settings'];
+
+  $imagepath = file_create_url($items[0]['uri']);
+  foreach ($items as $delta => $item) {
+    $element[$delta] = array(
+
+        '#theme' => 'lazyload_formatter',
+        '#item' => $item,
+        '#lazyload_image_style' => $settings['lazyload_image_style'],
+       //@TODO add links '#path' => isset($uri) ? $uri : '',
+      );
+    }
+    return $element;
+  }
+
+/**
+ * Returns HTML for an image field formatter.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - item: An array of image data.
+ *   - image_style: An optional image style.
+ *   - path: An array containing the link 'path' and link 'options'.
+ *
+ * @ingroup themeable
+ */
+function theme_lazyload_formatter($variables) {
+  $item = $variables['item'];
+
+  $placeholder = $variables['placeholder'];
+  $image = array(
+    'path' => $item['uri'],
+    'alt' => $item['alt'],
+  );
+  $effect = $variables['lazyload_effect'];
+  // Do not output an empty 'title' attribute.
+  if (drupal_strlen($item['title']) > 0) {
+    $image['title'] = $item['title'];
+  }
+  if ($variables['lazyload_image_style']=='None (original image)' || $variables['lazyload_image_style']=='') {
+    $url = file_create_url($item['uri']);
+  } else {
+    $url = image_style_url($variables['lazyload_image_style'], $item['uri']);
+  }
+  $output = '<img data-src="' . $url . '" src=data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw== onload=lzld(this) />';
+  if ($variables['path']) {
+    $path = $variables['path']['path'];
+    $options = $variables['path']['options'];
+    // When displaying an image inside a link, the html option must be TRUE.
+    $options['html'] = TRUE;
+    $output = l($output, $path, $options);
+  }
+  return $output;
+}
