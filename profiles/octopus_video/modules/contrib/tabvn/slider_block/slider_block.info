@@ -1,4 +1,0 @@
-name = slider block
-description = render slider nodes into a block
-core = 7.x
-package = Tabvn
